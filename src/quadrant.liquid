@@ -207,8 +207,8 @@
       <div class="vta-stats pt--small">
         <div class="vta-stat px--1">
           <div class="vta-stat-label text--small">DISTANCE</div>
-          <div class="vta-stat-value text--base">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
-          <div class="vta-stat-unit text--small">KM</div>
+          <div class="vta-stat-value text--base">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
+          <div class="vta-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div>
         </div>
         <div class="vta-stat px--1">
           <div class="vta-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
@@ -217,15 +217,15 @@
         </div>
         <div class="vta-stat px--1">
           <div class="vta-stat-label text--small">START</div>
-          <div class="vta-stat-value text--base">{{ stage_today.startTime | slice: 0, 5 }}</div>
-          <div class="vta-stat-unit text--small">CEST</div>
+          <div class="vta-stat-value text--base">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div>
+          <div class="vta-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div>
         </div>
       </div>
     </div>
 
     <div class="vta-bottom flex flex--row flex--center-y px--2 py--1 gap--small">
       <span class="next-tag rounded--xsmall px--1 py--1 text--small">NEXT {{ stage_tomorrow.stage }}</span>
-      <span class="next-line text--small">{{ next_from | upcase }} <span class="arrow px--3">›</span> {{ next_to | upcase }} · {{ stage_tomorrow.startTime | slice: 0, 5 }} CEST</span>
+      <span class="next-line text--small">{{ next_from | upcase }} <span class="arrow px--3">›</span> {{ next_to | upcase }} · {{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
     </div>
   </div>
 </div>

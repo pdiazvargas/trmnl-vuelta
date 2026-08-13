@@ -1,3 +1,8 @@
+{%- comment -%}
+  distance_unit and display_timezone (custom_fields.distance_unit / custom_fields.display_timezone)
+  are read in transform.js as input.custom_fields, and applied there rather than in this markup —
+  see the distanceValue/distanceUnitLabel/startTimeDisplay/startTimeZoneLabel fields below.
+{%- endcomment -%}
 {%- assign stages = stages | default: data.stages | default: data -%}
 {%- assign stage_today = today | default: data.today -%}
 {%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}
@@ -372,8 +377,8 @@
       </div>
       <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
         <div class="stage-stat-label text--small">DISTANCE</div>
-        <div class="stage-stat-value text--large">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
-        <div class="stage-stat-unit text--small">KM</div>
+        <div class="stage-stat-value text--large">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
+        <div class="stage-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div>
       </div>
       <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
         <div class="stage-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
@@ -382,8 +387,8 @@
       </div>
       <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
         <div class="stage-stat-label text--small">START</div>
-        <div class="stage-stat-value text--large">{{ stage_today.startTime | slice: 0, 5 }}</div>
-        <div class="stage-stat-unit text--small">CEST</div>
+        <div class="stage-stat-value text--large">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div>
+        <div class="stage-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div>
       </div>
     </div>
 

@@ -342,9 +342,9 @@
           <div class="vta-route {{ route_class }} pb--xsmall">{{ from | upcase }} <span class="arrow px--5">›</span> {{ to | upcase }}</div>
         </div>
         <div class="vta-stats pt--xsmall">
-          <div class="vta-stat px--2"><div class="vta-stat-label text--small">DISTANCE</div><div class="vta-stat-value text--base">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div><div class="vta-stat-unit text--small">KM</div></div>
+          <div class="vta-stat px--2"><div class="vta-stat-label text--small">DISTANCE</div><div class="vta-stat-value text--base">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div><div class="vta-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div></div>
           <div class="vta-stat px--2"><div class="vta-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div><div class="vta-stat-value text--small">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div><div class="vta-stat-unit text--small">{% if elevation_gain %}M{% else %}&nbsp;{% endif %}</div></div>
-          <div class="vta-stat px--2"><div class="vta-stat-label text--small">START</div><div class="vta-stat-value text--base">{{ stage_today.startTime | slice: 0, 5 }}</div><div class="vta-stat-unit text--small">CEST</div></div>
+          <div class="vta-stat px--2"><div class="vta-stat-label text--small">START</div><div class="vta-stat-value text--base">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div><div class="vta-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div></div>
         </div>
       </div>
 
@@ -358,7 +358,7 @@
     {% if stage_tomorrow %}
       <div class="vta-bottom flex flex--row flex--center-y px--3 py--2 gap--small">
         <span class="next-tag rounded--xsmall px--6 py--4 text--small">NEXT · STAGE {{ stage_tomorrow.stage }}</span>
-        <span class="next-line text--small">{{ next_from | upcase }} <span class="arrow px--4">›</span> {{ next_to | upcase }} · {{ stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} KM · {{ next_type_label }} · {{ stage_tomorrow.startTime | slice: 0, 5 }} CEST</span>
+        <span class="next-line text--small">{{ next_from | upcase }} <span class="arrow px--4">›</span> {{ next_to | upcase }} · {{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }} · {{ next_type_label }} · {{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
       </div>
     {% endif %}
   </div>
