@@ -55,7 +55,7 @@
     background: #fbfaf5;
     overflow: hidden;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
   }
 
   /* ── HEADER ── */
@@ -250,6 +250,25 @@
     font-weight: 1000;
     letter-spacing: .4px;
   }
+
+  /* ── ELEVATION PROFILE ── */
+  .vta-profile {
+    width: 100%;
+    height: 96px;
+    border-top: 3px solid var(--ink);
+    background: #fbfaf5;
+    overflow: hidden;
+  }
+
+  .vta-profile-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .vta-profile-svg text {
+    letter-spacing: 0;
+  }
 </style>
 
 <div class="layout vta-layout p--3">
@@ -314,6 +333,29 @@
       {% endif %}
       <div class="vta-main-caption text--xxlarge">{{ to | upcase }}</div>
     </div>
+
+    <!-- ELEVATION PROFILE -->
+    {% if elevationProfile %}
+      <div class="vta-profile">
+        <svg viewBox="0 0 {{ elevationProfile.width }} {{ elevationProfile.height }}" preserveAspectRatio="none" class="vta-profile-svg">
+          <polygon points="0,{{ elevationProfile.height }} {{ elevationProfile.points }} {{ elevationProfile.width }},{{ elevationProfile.height }}" fill="#111"></polygon>
+          {% for m in elevationProfile.markers %}
+            {% case m.type %}
+              {% when 'summit' %}
+                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="7" fill="#e2001a" stroke="#fbfaf5" stroke-width="1.5"></circle>
+                <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" class="text--small" fill="#fff">{{ m.category }}</text>
+              {% when 'sprint' %}
+                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="6" fill="#111"></circle>
+                <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" class="text--small" fill="#fff">S</text>
+              {% when 'start' %}
+                <circle cx="{{ m.x | plus: 5 }}" cy="{{ m.y | minus: 7 }}" r="5" fill="#111"></circle>
+              {% when 'finish' %}
+                <circle cx="{{ m.x | minus: 5 }}" cy="{{ m.y | minus: 7 }}" r="5" fill="#111" stroke="#fbfaf5" stroke-width="1"></circle>
+            {% endcase %}
+          {% endfor %}
+        </svg>
+      </div>
+    {% endif %}
 
     <!-- BOTTOM BAR: today's stage info -->
     <div class="vta-bottom">
