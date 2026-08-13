@@ -76,6 +76,131 @@ async function run(input) {
     return await res.json();
   }
 
+  async function fetchText(path) {
+    const url = new URL(path, baseUrl);
+    const res = await fetch(url.toString());
+
+    if (!res.ok) {
+      throw new Error("Race Center asset request failed");
+    }
+
+    return await res.text();
+  }
+
+  // The elevation profile isn't exposed through the documented /api/ JSON
+  // endpoints—the race center's own frontend loads it as a webpack-bundled,
+  // content-hashed CSV asset. Rediscovering the current hash means walking
+  // the same lookup its SPA does: homepage -> shared bundle -> per-stage
+  // chunk -> CSV. Each step is regex-matched defensively; any miss (ASO
+  // reshapes their build output) throws and the caller falls back to no
+  // profile rather than a broken render.
+  async function fetchElevationProfile(stageNumber) {
+    const CHART_WIDTH = 720;
+    const CHART_HEIGHT = 92;
+    const SAMPLE_POINTS = 100;
+
+    const stagePadded = String(stageNumber).padStart(2, "0");
+    const csvKey = `./${year}/profile-${stagePadded}-tiny.csv`;
+    const escapedKey = csvKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const homeHtml = await fetchText("/");
+
+    const commonMatch = homeHtml.match(/\/js\/chunk-common\.[a-f0-9]+\.js/);
+    if (!commonMatch) throw new Error("Could not locate shared bundle");
+    const commonJs = await fetchText(commonMatch[0]);
+
+    const mapMatch = commonJs.match(
+      new RegExp(`"${escapedKey}":\\["([a-f0-9]+)",(\\d+)\\]`)
+    );
+    if (!mapMatch) throw new Error("Could not locate profile chunk mapping");
+    const chunkNumber = mapMatch[2];
+
+    const chunkMatch = homeHtml.match(
+      new RegExp(`/js/${chunkNumber}\\.[a-f0-9]+\\.js`)
+    );
+    if (!chunkMatch) throw new Error("Could not locate profile chunk file");
+    const chunkJs = await fetchText(chunkMatch[0]);
+
+    const csvPathMatch = chunkJs.match(/profils\/[^"]+\.csv/);
+    if (!csvPathMatch) throw new Error("Could not locate profile CSV path");
+
+    const csvText = await fetchText(`/${csvPathMatch[0]}`);
+    return parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, SAMPLE_POINTS });
+  }
+
+  function parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, SAMPLE_POINTS }) {
+    const lines = csvText.trim().split("\n");
+    const header = lines[0].split(";");
+    const kmIdx = header.indexOf("kmdone");
+    const altIdx = header.indexOf("altitude");
+    const typeIdx = header.indexOf("cptype");
+    const catIdx = header.indexOf("sumcategory");
+
+    const rows = lines
+      .slice(1)
+      .map((line) => {
+        const cols = line.split(";");
+        return {
+          km: parseFloat(cols[kmIdx]),
+          altitude: parseFloat(cols[altIdx]),
+          cptype: (cols[typeIdx] || "").trim(),
+          category: (cols[catIdx] || "").trim()
+        };
+      })
+      .filter((r) => !isNaN(r.km) && !isNaN(r.altitude));
+
+    if (rows.length < 2) return null;
+
+    const totalKm = rows[rows.length - 1].km;
+    const altitudes = rows.map((r) => r.altitude);
+    const minAlt = Math.min.apply(null, altitudes);
+    const maxAlt = Math.max.apply(null, altitudes);
+    const altRange = maxAlt - minAlt || 1;
+
+    // Reserve headroom above the curve's peak so marker circles/labels
+    // (drawn above their point) never get pushed off the top of the chart.
+    const MARKER_HEADROOM = 22;
+    const BASELINE_MARGIN = 2;
+    const scaleX = (km) => Math.round((km / totalKm) * CHART_WIDTH);
+    const scaleY = (alt) =>
+      Math.round(
+        CHART_HEIGHT -
+          BASELINE_MARGIN -
+          ((alt - minAlt) / altRange) * (CHART_HEIGHT - BASELINE_MARGIN - MARKER_HEADROOM)
+      );
+
+    const step = Math.max(1, Math.floor(rows.length / SAMPLE_POINTS));
+    const sampled = [];
+    for (let i = 0; i < rows.length; i += step) {
+      sampled.push(rows[i]);
+    }
+    const lastRow = rows[rows.length - 1];
+    if (sampled[sampled.length - 1] !== lastRow) sampled.push(lastRow);
+
+    const points = sampled.map((r) => `${scaleX(r.km)},${scaleY(r.altitude)}`).join(" ");
+
+    const markerTypes = { real: "start", summit: "summit", sprint: "sprint", arrival: "finish" };
+    const markers = rows
+      .filter((r) => markerTypes[r.cptype])
+      .map((r) => ({
+        x: scaleX(r.km),
+        y: scaleY(r.altitude),
+        type: markerTypes[r.cptype],
+        category: sanitizeString(r.category),
+        altitude: Math.round(r.altitude)
+      }));
+
+    return {
+      width: CHART_WIDTH,
+      height: CHART_HEIGHT,
+      points,
+      markers,
+      minAltitude: Math.round(minAlt),
+      maxAltitude: Math.round(maxAlt),
+      totalKm
+    };
+  }
+
   function dateKey(dateString) {
     return String(dateString).slice(0, 10);
   }
@@ -176,11 +301,20 @@ async function run(input) {
     routePoints = [];
   }
 
+  let elevationProfile = null;
+
+  try {
+    elevationProfile = await fetchElevationProfile(today.stage);
+  } catch (error) {
+    elevationProfile = null;
+  }
+
   return {
     today,
     tomorrow,
     gc,
     routePoints,
+    elevationProfile,
 
     vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
 
@@ -205,7 +339,8 @@ async function run(input) {
       firstStage: firstStage.stage,
       lastStage: lastStage.stage,
       gcCount: gc.length,
-      routePointCount: routePoints.length
+      routePointCount: routePoints.length,
+      hasElevationProfile: !!elevationProfile
     }
   };
 }
