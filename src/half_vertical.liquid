@@ -1,0 +1,639 @@
+{%- assign stages = stages | default: data.stages | default: data -%}
+{%- assign stage_today = today | default: data.today -%}
+{%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}
+
+{%- if stage_today == blank and stages -%}
+  {%- assign stage_today = stages[0] -%}
+{%- endif -%}
+{%- if stage_tomorrow == blank and stages -%}
+  {%- assign stage_tomorrow = stages[1] -%}
+{%- endif -%}
+
+{%- assign from = stage_today.departureCity.label | default: stage_today.from | default: "Start city" -%}
+{%- assign to = stage_today.arrivalCity.label | default: stage_today.to | default: "Finish city" -%}
+{%- assign hero_image = stage_today.departureCity.content.image | default: stage_today.fromImage | default: stage_today.arrivalCity.content.image | default: stage_today.toImage -%}
+
+{%- assign next_from = stage_tomorrow.departureCity.label | default: stage_tomorrow.from | default: "Next start" -%}
+{%- assign next_to = stage_tomorrow.arrivalCity.label | default: stage_tomorrow.to | default: "Next finish" -%}
+
+{%- assign route_len = from.size | plus: to.size -%}
+{%- assign next_route_len = next_from.size | plus: next_to.size -%}
+
+{%- assign elevation_gain = stage_today.elevationGain | default: stage_today.elevation_gain | default: stage_today.positiveElevation -%}
+
+{%- case stage_today.type -%}
+  {%- when 'EQU' -%}{%- assign type_label = 'TEAM TIME TRIAL' -%}
+  {%- when 'PAS' -%}{%- assign type_label = 'TIME TRIAL' -%}
+  {%- when 'PLN' -%}{%- assign type_label = 'FLAT' -%}
+  {%- when 'MMG' -%}{%- assign type_label = 'MED. MOUNTAIN' -%}
+  {%- when 'HMG' -%}{%- assign type_label = 'MOUNTAIN' -%}
+  {%- when 'VAA' -%}{%- assign type_label = 'HILLY' -%}
+  {%- when 'PAA' -%}{%- assign type_label = 'HILLY' -%}
+  {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
+  {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
+{%- endcase -%}
+
+{%- case stage_tomorrow.type -%}
+  {%- when 'EQU' -%}{%- assign next_type_label = 'TEAM TIME TRIAL' -%}
+  {%- when 'PAS' -%}{%- assign next_type_label = 'TIME TRIAL' -%}
+  {%- when 'PLN' -%}{%- assign next_type_label = 'FLAT' -%}
+  {%- when 'MMG' -%}{%- assign next_type_label = 'MED. MOUNTAIN' -%}
+  {%- when 'HMG' -%}{%- assign next_type_label = 'MOUNTAIN' -%}
+  {%- when 'VAA' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- when 'PAA' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- when 'VAL' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- else -%}{%- assign next_type_label = stage_tomorrow.type | default: 'STAGE' -%}
+{%- endcase -%}
+
+<style>
+  .vta-portrait,
+  .vta-portrait * { box-sizing: border-box; }
+
+  .vta-portrait {
+    --red: #e2001a;
+    --paper: #f4f1e8;
+    --ink: #111;
+    --muted: #777;
+    padding: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    overflow: hidden;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+  }
+
+  .vta-card {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--ink);
+    border-radius: 15px;
+    background: #fbfaf5;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 54px 150px minmax(0, 1fr) 68px 96px;
+  }
+
+  .vta-header {
+    background: var(--ink);
+    color: #fff;
+    display: grid;
+    grid-template-columns: 94px minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .vta-logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 2px solid #fff;
+    padding: 5px 7px;
+  }
+
+  .vta-logo {
+    width: 72px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .vta-gc {
+    min-width: 0;
+    display: grid;
+    align-items: stretch;
+  }
+
+  .vta-gc.has-gc,
+  .vta-gc.pre-race {
+    grid-template-columns: 1fr;
+  }
+
+  .vta-gc-item {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 7px;
+    align-items: center;
+    padding: 7px 9px;
+    color: #fff;
+  }
+
+  .vta-gc-item:nth-child(n+2) {
+    display: none;
+  }
+
+  .gc-pos {
+    color: var(--red);
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 1000;
+  }
+
+  .gc-name {
+    min-width: 0;
+    font-size: 15px;
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: -.35px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gc-sub {
+    margin-top: 4px;
+    color: #cfcfcf;
+    font-size: 7px;
+    line-height: 1;
+    font-weight: 850;
+    letter-spacing: .3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gc-time {
+    color: var(--red);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 1000;
+    white-space: nowrap;
+  }
+
+  .vta-hero {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-bottom: 3px solid var(--ink);
+    background: #ddd;
+  }
+
+  .vta-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.45);
+    display: block;
+  }
+
+  .vta-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#111 0.65px, transparent 0.65px);
+    background-size: 5px 5px;
+    opacity: .18;
+    pointer-events: none;
+  }
+
+  .vta-hero-title {
+    position: absolute;
+    left: 14px;
+    bottom: 13px;
+    z-index: 2;
+    color: var(--red);
+    font-size: 31px;
+    line-height: .88;
+    font-weight: 1000;
+    font-style: italic;
+    letter-spacing: -1.2px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 #111;
+    max-width: 92%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .vta-stage-block {
+    min-width: 0;
+    padding: 14px 14px 12px;
+    border-bottom: 3px solid var(--ink);
+    background: #fbfaf5;
+    display: grid;
+    align-content: center;
+  }
+
+  .vta-date-line {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .vta-badge {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: .6px;
+    white-space: nowrap;
+  }
+
+  .vta-date {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 3px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 1000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vta-stage-count {
+    background: var(--red);
+    color: #fff;
+    padding: 5px 7px;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 1000;
+    white-space: nowrap;
+  }
+
+  .vta-stage-title {
+    font-size: 46px;
+    line-height: .84;
+    font-weight: 1000;
+    letter-spacing: -1.9px;
+    margin-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .vta-stage-title.is-two-digit {
+    font-size: 41px;
+    letter-spacing: -1.4px;
+  }
+
+  .vta-route {
+    min-width: 0;
+    font-size: 28px;
+    line-height: .98;
+    font-weight: 1000;
+    letter-spacing: -.75px;
+    text-transform: uppercase;
+    overflow: hidden;
+  }
+
+  .vta-route.is-long { font-size: 24px; line-height: 1; }
+  .vta-route.is-very-long { font-size: 20px; line-height: 1.02; }
+  .vta-route.is-extreme { font-size: 16px; line-height: 1.04; }
+
+  .vta-route .arrow,
+  .next-route .arrow {
+    color: var(--red);
+    padding: 0 5px;
+  }
+
+  .vta-stats {
+    display: grid;
+    grid-template-columns: 1fr 1.14fr 1fr;
+    background: #fbfaf5;
+    border-bottom: 3px solid var(--ink);
+  }
+
+  .vta-stat {
+    min-width: 0;
+    text-align: center;
+    padding: 10px 5px 8px;
+    border-right: 2px solid var(--ink);
+    overflow: hidden;
+  }
+
+  .vta-stat:last-child {
+    border-right: 0;
+  }
+
+  .vta-stat-label {
+    color: var(--muted);
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: .7px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .vta-stat-value {
+    font-size: 24px;
+    line-height: .9;
+    font-weight: 1000;
+    letter-spacing: -.8px;
+    white-space: nowrap;
+  }
+
+  .vta-stat-value-type {
+    font-size: 16px;
+    letter-spacing: -.8px;
+  }
+
+  .vta-stat-unit {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: .5px;
+  }
+
+  .vta-bottom {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    background: #fbfaf5;
+  }
+
+  .next-number {
+    background: var(--red);
+    color: #fff;
+    border-right: 3px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 1000;
+  }
+
+  .next-number .small {
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: .7px;
+  }
+
+  .next-number .num {
+    font-size: 32px;
+    line-height: .88;
+  }
+
+  .next-main {
+    min-width: 0;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: 6px;
+  }
+
+  .next-date {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 1000;
+    margin-bottom: 5px;
+  }
+
+  .next-route {
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 1000;
+    letter-spacing: -.45px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .next-route.is-long { font-size: 14px; }
+  .next-route.is-very-long { font-size: 12px; }
+  .next-route.is-extreme { font-size: 10px; }
+
+  .next-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 8px;
+    font-weight: 1000;
+    white-space: nowrap;
+  }
+
+  .next-distance {
+    font-size: 13px;
+    line-height: 1;
+    letter-spacing: -.3px;
+  }
+
+  .next-type {
+    background: var(--ink);
+    color: #fff;
+    padding: 4px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-height: 520px) {
+    .vta-card {
+      grid-template-rows: 48px 112px minmax(0, 1fr) 50px 82px;
+    }
+
+    .vta-logo {
+      width: 68px;
+      height: 30px;
+    }
+
+    .gc-name { font-size: 13px; }
+    .gc-time { font-size: 10px; }
+
+    .vta-hero-title {
+      font-size: 25px;
+      bottom: 10px;
+    }
+
+    .vta-stage-block {
+      padding: 10px 11px 9px;
+    }
+
+    .vta-date-line {
+      margin-bottom: 7px;
+    }
+
+    .vta-stage-title {
+      font-size: 34px;
+      margin-bottom: 7px;
+    }
+
+    .vta-stage-title.is-two-digit {
+      font-size: 30px;
+    }
+
+    .vta-route {
+      font-size: 21px;
+    }
+
+    .vta-route.is-long { font-size: 18px; }
+    .vta-route.is-very-long { font-size: 15px; }
+    .vta-route.is-extreme { font-size: 13px; }
+
+    .vta-stat {
+      padding: 6px 4px 4px;
+    }
+
+    .vta-stat-value {
+      font-size: 18px;
+    }
+
+    .vta-stat-value-type {
+      font-size: 12px;
+    }
+
+    .next-number .num {
+      font-size: 26px;
+    }
+
+    .next-route {
+      font-size: 13px;
+    }
+
+    .next-distance {
+      font-size: 11px;
+    }
+  }
+
+  @media (min-height: 620px) {
+    .vta-card {
+      grid-template-rows: 58px 190px minmax(0, 1fr) 76px 112px;
+    }
+
+    .vta-hero-title {
+      font-size: 36px;
+    }
+
+    .vta-stage-title {
+      font-size: 50px;
+    }
+
+    .vta-stage-title.is-two-digit {
+      font-size: 44px;
+    }
+
+    .vta-route {
+      font-size: 30px;
+    }
+
+    .vta-route.is-long { font-size: 26px; }
+    .vta-route.is-very-long { font-size: 22px; }
+    .vta-route.is-extreme { font-size: 18px; }
+
+    .vta-stat {
+      padding: 10px 5px 8px;
+    }
+
+    .next-route {
+      font-size: 19px;
+    }
+
+    .next-route.is-long { font-size: 16px; }
+    .next-route.is-very-long { font-size: 13.5px; }
+
+    .next-distance {
+      font-size: 15px;
+    }
+  }
+</style>
+
+<div class="layout vta-portrait">
+  <div class="vta-card">
+    <div class="vta-header">
+      <div class="vta-logo-wrap">
+        <img class="vta-logo" src="{{ vueltaLogo | default: 'https://www.lavuelta.es/img/global/logo-reversed@2x.png' }}" alt="La Vuelta a España">
+      </div>
+
+      <div class="vta-gc {% if gc and gc.size >= 3 %}has-gc{% else %}pre-race{% endif %}">
+        {% if gc and gc.size >= 3 %}
+          <div class="vta-gc-item">
+            <div class="gc-pos">1</div>
+            <div>
+              <div class="gc-name">{{ gc[0].name | upcase }}</div>
+              <div class="gc-sub">{% if gc[0].team %}{{ gc[0].team | upcase }}{% else %}TOTAL TIME{% endif %}</div>
+            </div>
+            <div class="gc-time">{{ gc[0].time }}</div>
+          </div>
+        {% else %}
+          <div class="vta-gc-item">
+            <div class="gc-pos">▶</div>
+            <div>
+              <div class="gc-name">{{ preRaceHeader.title | default: "VUELTA STARTS" }}</div>
+              <div class="gc-sub">GRAN SALIDA · {{ preRaceHeader.location | default: "SPAIN" }}</div>
+            </div>
+            <div class="gc-time">{{ preRaceHeader.date | default: "AUGUST" }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="vta-hero">
+      {% if hero_image %}
+        <img src="{{ hero_image }}" alt="{{ from }}">
+      {% endif %}
+      <div class="vta-hero-title">{{ from | upcase }}</div>
+    </div>
+
+    <div class="vta-stage-block">
+      <div class="vta-date-line">
+        <div class="vta-badge">{{ stage_today.date | date: "%a" | upcase }}</div>
+        <div class="vta-date">{{ stage_today.date | date: "%d %B %Y" | upcase }}</div>
+        <div class="vta-stage-count">STAGE {{ stage_today.stage }} OF 21</div>
+      </div>
+
+      <div class="vta-stage-title {% if stage_today.stage >= 10 %}is-two-digit{% endif %}">STAGE {{ stage_today.stage }}</div>
+      <div class="vta-route {% if route_len > 44 %}is-extreme{% elsif route_len > 34 %}is-very-long{% elsif route_len > 24 %}is-long{% endif %}">
+        {{ from | upcase }} <span class="arrow">›</span> {{ to | upcase }}
+      </div>
+    </div>
+
+    <div class="vta-stats">
+      <div class="vta-stat">
+        <div class="vta-stat-label">DISTANCE</div>
+        <div class="vta-stat-value">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
+        <div class="vta-stat-unit">KM</div>
+      </div>
+
+      <div class="vta-stat">
+        <div class="vta-stat-label">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
+        <div class="vta-stat-value vta-stat-value-type">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div>
+        <div class="vta-stat-unit">{% if elevation_gain %}M{% else %}&nbsp;{% endif %}</div>
+      </div>
+
+      <div class="vta-stat">
+        <div class="vta-stat-label">START TIME</div>
+        <div class="vta-stat-value">{{ stage_today.startTime | slice: 0, 5 }}</div>
+        <div class="vta-stat-unit">CEST</div>
+      </div>
+    </div>
+
+    {% if stage_tomorrow %}
+      <div class="vta-bottom">
+        <div class="next-number">
+          <div class="small">NEXT</div>
+          <div class="num">{{ stage_tomorrow.stage }}</div>
+          <div class="small">OF 21</div>
+        </div>
+
+        <div class="next-main">
+          <div>
+            <div class="next-date">{{ stage_tomorrow.date | date: "%a %d %B %Y" | upcase }}</div>
+            <div class="next-route {% if next_route_len > 44 %}is-extreme{% elsif next_route_len > 34 %}is-very-long{% elsif next_route_len > 24 %}is-long{% endif %}">
+              {{ next_from | upcase }} <span class="arrow">›</span> {{ next_to | upcase }}
+            </div>
+          </div>
+          <div class="next-meta">
+            <span class="next-distance">{{ stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} KM</span>
+            <span>|</span>
+            <span class="next-type">{{ next_type_label }}</span>
+            <span>|</span>
+            <span>{{ stage_tomorrow.startTime | slice: 0, 5 }}</span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>

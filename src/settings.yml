@@ -1,0 +1,20 @@
+---
+strategy: polling
+no_screen_padding: 'yes'
+dark_mode: 'no'
+static_data: ''
+polling_verb: get
+framework_version: 3.1.1
+serverless_language: node
+polling_url: https://racecenter.lavuelta.es/api/stage-2026
+polling_headers: ''
+polling_body: ''
+custom_fields:
+- keyname: about_this_plugin
+  name: About This Plugin
+  field_type: author_bio
+  email_address: pedrodiazvargas@gmail.com
+  category: sports,entertainment
+  description: Fan-made La Vuelta a España Stage Dashboard for TRMNL. Shows today's stage, route, distance, type, start time, elevation profile, and tomorrow's stage preview. Not affiliated with, endorsed by, or sponsored by ASO or La Vuelta a España.
+name: Vuelta a España Stages
+refresh_interval: 15
