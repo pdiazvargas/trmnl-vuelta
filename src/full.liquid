@@ -26,6 +26,13 @@
   {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
   {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
 {% endcase %}
+
+{%- assign route_class = 'text--base' -%}
+{%- if route_len > 30 -%}{%- assign route_class = 'text--small' -%}{%- endif -%}
+
+{%- assign stat2_class = 'text--large' -%}
+{%- unless elevation_gain -%}{%- assign stat2_class = 'text--base' -%}{%- endunless -%}
+
 <style>
   .vta-layout,
   .vta-layout * { box-sizing: border-box; }
@@ -34,8 +41,7 @@
     --red: #e2001a;
     --paper: #f4f1e8;
     --ink: #111;
-    --muted: #777;
-    padding: 8px;
+    --muted: #707070;
     background: var(--paper);
     color: var(--ink);
     overflow: hidden;
@@ -46,11 +52,10 @@
     width: 100%;
     height: 100%;
     border: 3px solid var(--ink);
-    border-radius: 14px;
     background: #fbfaf5;
     overflow: hidden;
     display: grid;
-    grid-template-rows: 58px minmax(0, 1fr) 78px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   /* ── HEADER ── */
@@ -58,24 +63,18 @@
     background: var(--ink);
     color: #fff;
     display: grid;
-    grid-template-columns: 116px 1fr;
+    grid-template-columns: 132px 1fr;
     align-items: stretch;
     min-width: 0;
   }
 
   .vta-logo-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-right: 2px solid #fff;
-    padding: 6px 8px;
   }
 
   .vta-logo {
-    width: 92px;
-    height: 40px;
-    object-fit: contain;
-    display: block;
+    width: 96px;
+    height: 42px;
   }
 
   .vta-gc {
@@ -91,9 +90,8 @@
     min-width: 0;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: 6px;
+    column-gap: 8px;
     align-items: center;
-    padding: 7px 10px;
     border-right: 1px solid #fff;
     color: #fff;
   }
@@ -102,29 +100,25 @@
 
   .gc-pos {
     color: var(--red);
-    font-size: 24px;
     line-height: 1;
     font-weight: 1000;
   }
 
   .gc-name {
     min-width: 0;
-    font-size: 16px;
     line-height: 1;
     font-weight: 1000;
-    letter-spacing: -.4px;
+    letter-spacing: -.3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .gc-sub {
-    margin-top: 4px;
     color: #cfcfcf;
-    font-size: 8px;
     line-height: 1;
-    font-weight: 850;
-    letter-spacing: .4px;
+    font-weight: 800;
+    letter-spacing: .3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -133,7 +127,6 @@
   .gc-time {
     color: var(--red);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 14px;
     line-height: 1;
     font-weight: 1000;
     white-space: nowrap;
@@ -151,8 +144,6 @@
   .vta-main img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    filter: grayscale(1) contrast(1.25);
     display: block;
   }
 
@@ -160,36 +151,33 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(#111 0.65px, transparent 0.65px);
+    background-image: radial-gradient(rgba(17, 17, 17, .16) .65px, transparent .65px);
     background-size: 5px 5px;
-    opacity: .16;
     pointer-events: none;
   }
 
   .vta-main-caption {
     position: absolute;
-    left: 14px;
-    bottom: 12px;
+    left: 16px;
+    bottom: 14px;
     z-index: 2;
     color: var(--red);
-    font-size: 30px;
-    line-height: .88;
+    line-height: .86;
     font-weight: 1000;
     font-style: italic;
-    letter-spacing: -1.1px;
+    letter-spacing: -1px;
     text-transform: uppercase;
     text-shadow: 2px 2px 0 #111;
-    max-width: 92%;
+    max-width: 90%;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: clip;
   }
 
   /* ── BOTTOM BAR: today's stage info ── */
   .vta-bottom {
     border-top: 3px solid var(--ink);
     display: grid;
-    grid-template-columns: 78px minmax(0, 1fr) auto auto auto;
+    grid-template-columns: 84px minmax(0, 1fr) 112px 128px 100px;
     min-width: 0;
     background: #fbfaf5;
   }
@@ -198,195 +186,122 @@
     background: var(--red);
     color: #fff;
     border-right: 3px solid var(--ink);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     font-weight: 1000;
     flex-shrink: 0;
   }
 
-  .stage-number .small { font-size: 9px; letter-spacing: .7px; }
-  .stage-number .num { font-size: 31px; line-height: .9; }
+  .stage-number .small { letter-spacing: .6px; line-height: 1; }
+  .stage-number .num { line-height: .9; }
 
   .stage-route-col {
     min-width: 0;
-    padding: 8px 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     border-right: 3px solid var(--ink);
   }
 
   .stage-date {
     display: inline-block;
+    max-width: 100%;
     background: var(--ink);
     color: #fff;
-    border-radius: 3px;
-    padding: 3px 6px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 8px;
     line-height: 1;
     font-weight: 1000;
-    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     align-self: flex-start;
   }
 
   .stage-route {
-    font-size: 15px;
     line-height: 1;
     font-weight: 1000;
-    letter-spacing: -.5px;
+    letter-spacing: -.4px;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: clip;
   }
 
-  .stage-route.is-long { font-size: 13px; letter-spacing: -.35px; }
-  .stage-route.is-very-long { font-size: 11.5px; letter-spacing: -.25px; }
-  .stage-route .arrow { color: var(--red); padding: 0 4px; }
+  .stage-route .arrow { color: var(--red); }
 
   .stage-stat {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
     border-right: 3px solid var(--ink);
-    text-align: center;
+    overflow: hidden;
   }
 
   .stage-stat:last-child { border-right: 0; }
 
   .stage-stat-label {
-    font-size: 7px;
     line-height: 1;
     font-weight: 1000;
-    letter-spacing: .7px;
+    letter-spacing: .6px;
     text-transform: uppercase;
-    margin-bottom: 4px;
   }
 
   .stage-stat-value {
-    font-size: 18px;
     line-height: .95;
     font-weight: 1000;
-    letter-spacing: -.8px;
+    letter-spacing: -.6px;
     white-space: nowrap;
   }
 
-  .stage-stat-value.is-type { font-size: 13px; letter-spacing: -.4px; }
-
   .stage-stat-unit {
-    margin-top: 3px;
     color: var(--muted);
-    font-size: 7px;
     line-height: 1;
     font-weight: 1000;
-    letter-spacing: .5px;
-  }
-
-  /* ── LARGE (V2/X) ── */
-  @media (min-width: 1000px) {
-    .vta-layout { padding: 10px; }
-
-    .vta-card {
-      border-width: 4px;
-      border-radius: 18px;
-      grid-template-rows: 78px minmax(0, 1fr) 96px;
-    }
-
-    .vta-header { grid-template-columns: 150px 1fr; }
-    .vta-logo-wrap { padding: 8px 12px; }
-    .vta-logo { width: 120px; height: 52px; }
-
-    .vta-gc-item { column-gap: 10px; padding: 9px 16px; }
-    .vta-gc.pre-race .vta-gc-item { padding-left: 22px; padding-right: 22px; }
-    .gc-pos { font-size: 34px; }
-    .gc-name { font-size: 22px; }
-    .gc-sub { margin-top: 7px; font-size: 11px; }
-    .gc-time { font-size: 20px; }
-    .vta-gc.pre-race .gc-name { font-size: 28px; }
-    .vta-gc.pre-race .gc-sub { font-size: 12px; }
-    .vta-gc.pre-race .gc-time { font-size: 25px; }
-    .vta-gc.pre-race .gc-pos { font-size: 38px; }
-
-    .vta-main-caption { font-size: 44px; left: 20px; bottom: 18px; }
-
-    .vta-bottom {
-      border-top-width: 4px;
-      grid-template-columns: 112px minmax(0, 1fr) auto auto auto;
-    }
-
-    .stage-number { border-right-width: 4px; }
-    .stage-number .small { font-size: 13px; }
-    .stage-number .num { font-size: 46px; }
-
-    .stage-route-col { padding: 12px 18px; border-right-width: 4px; }
-    .stage-date { padding: 5px 8px; font-size: 12px; margin-bottom: 8px; }
-    .stage-route { font-size: 25px; }
-    .stage-route.is-long { font-size: 22px; }
-    .stage-route.is-very-long { font-size: 19px; }
-
-    .stage-stat { padding: 12px 20px; border-right-width: 4px; }
-    .stage-stat-label { font-size: 11px; margin-bottom: 7px; }
-    .stage-stat-value { font-size: 32px; letter-spacing: -1.4px; }
-    .stage-stat-value.is-type { font-size: 22px; letter-spacing: -.8px; }
-    .stage-stat-unit { margin-top: 6px; font-size: 11px; }
+    letter-spacing: .4px;
   }
 </style>
 
-<div class="layout vta-layout">
-  <div class="vta-card">
+<div class="layout vta-layout p--3">
+  <div class="vta-card rounded--large">
 
     <!-- HEADER -->
     <div class="vta-header">
-      <div class="vta-logo-wrap flex flex--center">
-        <img class="vta-logo" src="{{ vueltaLogo | default: 'https://www.lavuelta.es/img/global/logo-reversed@2x.png' }}" alt="La Vuelta a España">
+      <div class="vta-logo-wrap flex flex--row flex--center-x flex--center-y px--4 py--3">
+        <img class="vta-logo image image--contain" src="{{ vueltaLogo | default: 'https://www.lavuelta.es/img/global/logo-reversed@2x.png' }}" alt="La Vuelta a España">
       </div>
       <div class="vta-gc {% if gc and gc.size >= 3 %}has-gc{% else %}pre-race{% endif %}">
         {% if gc and gc.size >= 3 %}
-          <div class="vta-gc-item">
-            <div class="gc-pos">1</div>
+          <div class="vta-gc-item px--3 py--2">
+            <div class="gc-pos text--xlarge">1</div>
             <div>
-              <div class="gc-name">{{ gc[0].name | upcase }}</div>
-              <div class="gc-sub">{% if gc[0].team %}{{ gc[0].team | upcase }}{% else %}TOTAL TIME{% endif %}</div>
+              <div class="gc-name text--base">{{ gc[0].name | upcase }}</div>
+              <div class="gc-sub text--small mt--xsmall">{% if gc[0].team %}{{ gc[0].team | upcase }}{% else %}TOTAL TIME{% endif %}</div>
             </div>
-            <div class="gc-time">{{ gc[0].time }}</div>
+            <div class="gc-time text--base">{{ gc[0].time }}</div>
           </div>
-          <div class="vta-gc-item">
-            <div class="gc-pos">2</div>
+          <div class="vta-gc-item px--3 py--2">
+            <div class="gc-pos text--xlarge">2</div>
             <div>
-              <div class="gc-name">{{ gc[1].name | upcase }}</div>
-              <div class="gc-sub">{% if gc[1].team %}{{ gc[1].team | upcase }}{% else %}BEHIND{% endif %}</div>
+              <div class="gc-name text--base">{{ gc[1].name | upcase }}</div>
+              <div class="gc-sub text--small mt--xsmall">{% if gc[1].team %}{{ gc[1].team | upcase }}{% else %}BEHIND{% endif %}</div>
             </div>
-            <div class="gc-time">{{ gc[1].gap }}</div>
+            <div class="gc-time text--base">{{ gc[1].gap }}</div>
           </div>
-          <div class="vta-gc-item">
-            <div class="gc-pos">3</div>
+          <div class="vta-gc-item px--3 py--2">
+            <div class="gc-pos text--xlarge">3</div>
             <div>
-              <div class="gc-name">{{ gc[2].name | upcase }}</div>
-              <div class="gc-sub">{% if gc[2].team %}{{ gc[2].team | upcase }}{% else %}BEHIND{% endif %}</div>
+              <div class="gc-name text--base">{{ gc[2].name | upcase }}</div>
+              <div class="gc-sub text--small mt--xsmall">{% if gc[2].team %}{{ gc[2].team | upcase }}{% else %}BEHIND{% endif %}</div>
             </div>
-            <div class="gc-time">{{ gc[2].gap }}</div>
+            <div class="gc-time text--base">{{ gc[2].gap }}</div>
           </div>
         {% else %}
-          <div class="vta-gc-item">
-            <div class="gc-pos">&#9654;</div>
+          <div class="vta-gc-item px--3 py--2">
+            <div class="gc-pos text--xlarge">&#9654;</div>
             <div>
-              <div class="gc-name">{{ preRaceHeader.title | default: "VUELTA STARTS" }}</div>
-              <div class="gc-sub">GRAN SALIDA · {{ preRaceHeader.location | default: "SPAIN" }}</div>
+              <div class="gc-name text--base">{{ preRaceHeader.title | default: "VUELTA STARTS" }}</div>
+              <div class="gc-sub text--small mt--xsmall">GRAN SALIDA · {{ preRaceHeader.location | default: "SPAIN" }}</div>
             </div>
-            <div class="gc-time">{{ preRaceHeader.date | default: "AUGUST" }}</div>
+            <div class="gc-time text--base">{{ preRaceHeader.date | default: "AUGUST" }}</div>
           </div>
-          <div class="vta-gc-item">
-            <div class="gc-pos">{{ preRaceHeader.stageNumber | default: "1" }}</div>
+          <div class="vta-gc-item px--3 py--2">
+            <div class="gc-pos text--xlarge">{{ preRaceHeader.stageNumber | default: "1" }}</div>
             <div>
-              <div class="gc-name">{{ preRaceHeader.stage | default: "STAGE 1 OF 21" }}</div>
-              <div class="gc-sub">GENERAL CLASSIFICATION STARTS AFTER STAGE 1</div>
+              <div class="gc-name text--base">{{ preRaceHeader.stage | default: "STAGE 1 OF 21" }}</div>
+              <div class="gc-sub text--small mt--xsmall">GC STARTS AFTER STAGE 1</div>
             </div>
-            <div class="gc-time">{{ preRaceHeader.year | default: "2026" }}</div>
+            <div class="gc-time text--base">{{ preRaceHeader.year | default: "2026" }}</div>
           </div>
         {% endif %}
       </div>
@@ -395,38 +310,38 @@
     <!-- MAIN: hero city image with route caption -->
     <div class="vta-main">
       {% if hero_image %}
-        <img src="{{ hero_image }}" alt="Stage {{ stage_today.stage }}: {{ from }} to {{ to }}">
+        <img class="image image--cover image-dither" src="{{ hero_image }}" alt="Stage {{ stage_today.stage }}: {{ from }} to {{ to }}">
       {% endif %}
-      <div class="vta-main-caption">{{ to | upcase }}</div>
+      <div class="vta-main-caption text--xxlarge">{{ to | upcase }}</div>
     </div>
 
     <!-- BOTTOM BAR: today's stage info -->
     <div class="vta-bottom">
-      <div class="stage-number">
-        <div class="small">STAGE</div>
-        <div class="num">{{ stage_today.stage }}</div>
-        <div class="small">OF 21</div>
+      <div class="stage-number flex flex--col flex--center-x flex--center-y">
+        <div class="small text--small">STAGE</div>
+        <div class="num text--xxlarge">{{ stage_today.stage }}</div>
+        <div class="small text--small">OF 21</div>
       </div>
-      <div class="stage-route-col">
-        <div class="stage-date">{{ stage_today.date | date: "%a %d %B %Y" | upcase }}</div>
-        <div class="stage-route {% if route_len > 34 %}is-very-long{% elsif route_len > 24 %}is-long{% endif %}">
-          {{ from | upcase }}<span class="arrow">›</span>{{ to | upcase }}
+      <div class="stage-route-col flex flex--col flex--center-y px--4 py--3">
+        <div class="stage-date rounded--xsmall px--6 py--3 mb--xsmall text--small">{{ stage_today.date | date: "%a %d %B %Y" | upcase }}</div>
+        <div class="stage-route {{ route_class }}">
+          {{ from | upcase }}<span class="arrow px--4">›</span>{{ to | upcase }}
         </div>
       </div>
-      <div class="stage-stat">
-        <div class="stage-stat-label">DISTANCE</div>
-        <div class="stage-stat-value">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
-        <div class="stage-stat-unit">KM</div>
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
+        <div class="stage-stat-label text--small">DISTANCE</div>
+        <div class="stage-stat-value text--large">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
+        <div class="stage-stat-unit text--small">KM</div>
       </div>
-      <div class="stage-stat">
-        <div class="stage-stat-label">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
-        <div class="stage-stat-value {% unless elevation_gain %}is-type{% endunless %}">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div>
-        <div class="stage-stat-unit">{% if elevation_gain %}M{% endif %}</div>
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
+        <div class="stage-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
+        <div class="stage-stat-value {{ stat2_class }}">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div>
+        <div class="stage-stat-unit text--small">{% if elevation_gain %}M{% endif %}</div>
       </div>
-      <div class="stage-stat">
-        <div class="stage-stat-label">START</div>
-        <div class="stage-stat-value">{{ stage_today.startTime | slice: 0, 5 }}</div>
-        <div class="stage-stat-unit">CEST</div>
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
+        <div class="stage-stat-label text--small">START</div>
+        <div class="stage-stat-value text--large">{{ stage_today.startTime | slice: 0, 5 }}</div>
+        <div class="stage-stat-unit text--small">CEST</div>
       </div>
     </div>
 
