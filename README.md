@@ -4,6 +4,10 @@ A [TRMNL](https://usetrmnl.com) private plugin that shows today's La Vuelta a Es
 
 Forked from the "Tour de France Stages" plugin, pointed at La Vuelta instead of the Tour — La Vuelta runs on the same ASO Race Center platform, so the same fetch/shape logic applies almost unchanged.
 
+![Full layout preview](docs/preview-full.png)
+
+*Live preview via `trmnlp serve`, showing the actual 2026 Grand Départ (Monaco, stage 1) pulled from `racecenter.lavuelta.es`.*
+
 ## How it works
 
 The plugin uses TRMNL's [polling + serverless transform](https://docs.usetrmnl.com/go/private-plugins/create-a-plugin) strategy. `src/transform.js` is executed by TRMNL itself: it fetches the current year's stage list, checkpoint, and ranking data from `racecenter.lavuelta.es`, figures out which stage is "today" (before / during / after the race), and returns a shaped payload that the Liquid templates in `src/` render.
