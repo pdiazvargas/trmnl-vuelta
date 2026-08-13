@@ -377,8 +377,8 @@
     <div class="vta-stats">
       <div class="vta-stat px--2 py--2">
         <div class="vta-stat-label text--small">DISTANCE</div>
-        <div class="vta-stat-value text--large">{{ stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
-        <div class="vta-stat-unit text--small">KM</div>
+        <div class="vta-stat-value text--large">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
+        <div class="vta-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div>
       </div>
 
       <div class="vta-stat px--2 py--2">
@@ -389,8 +389,8 @@
 
       <div class="vta-stat px--2 py--2">
         <div class="vta-stat-label text--small">START</div>
-        <div class="vta-stat-value text--large">{{ stage_today.startTime | slice: 0, 5 }}</div>
-        <div class="vta-stat-unit text--small">CEST</div>
+        <div class="vta-stat-value text--large">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div>
+        <div class="vta-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div>
       </div>
     </div>
 
@@ -409,11 +409,11 @@
             </div>
           </div>
           <div class="next-meta text--small">
-            <span>{{ stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} KM</span>
+            <span>{{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }}</span>
             <span>|</span>
             <span class="next-type rounded--xsmall px--2 py--1">{{ next_type_label }}</span>
             <span>|</span>
-            <span>{{ stage_tomorrow.startTime | slice: 0, 5 }} CEST</span>
+            <span>{{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
           </div>
         </div>
       </div>

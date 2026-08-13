@@ -226,12 +226,110 @@ async function run(input) {
     return `${parts.find((p) => p.type === "month").value} ${parts.find((p) => p.type === "day").value}`.toUpperCase();
   }
 
+  // TRMNL's docs don't pin down exactly where custom field selections land on
+  // the transform input, so check the shapes seen in practice rather than
+  // assuming one.
+  function customField(input, keyname, fallback) {
+    const sources = [
+      input?.custom_fields,
+      input?.custom_fields_values,
+      input?.trmnl?.plugin_settings?.custom_fields_values,
+      input?.trmnl?.custom_fields_values
+    ];
+
+    for (const source of sources) {
+      if (source && typeof source === "object" && source[keyname]) {
+        return source[keyname];
+      }
+    }
+
+    return fallback;
+  }
+
+  function resolveDistanceUnit(input) {
+    const raw = String(customField(input, "distance_unit", "Kilometers"));
+    return /mile|mi\b/i.test(raw) ? "mi" : "km";
+  }
+
+  function resolveDisplayTimeZone(input) {
+    const raw = String(customField(input, "display_timezone", "CEST"));
+    return /eastern/i.test(raw) ? "America/New_York" : "Europe/Madrid";
+  }
+
+  function formatDistance(stage, unit) {
+    const raw = stage.lengthDisplay ?? stage.length ?? stage.distance;
+    const km = typeof raw === "number" ? raw : parseFloat(raw);
+
+    if (isNaN(km)) {
+      return { distanceValue: sanitizeString(raw, ""), distanceUnitLabel: "KM" };
+    }
+
+    if (unit === "mi") {
+      return {
+        distanceValue: String(Math.round(km * 0.621371 * 10) / 10),
+        distanceUnitLabel: "MI"
+      };
+    }
+
+    return { distanceValue: String(Math.round(km * 10) / 10), distanceUnitLabel: "KM" };
+  }
+
+  function stageStartDateTime(stage) {
+    if (!stage || !stage.date || !stage.startTime) return null;
+
+    const offsetMatch = String(stage.date).match(/([+-]\d{2}:\d{2})$/);
+    const offset = offsetMatch ? offsetMatch[1] : "+02:00";
+    const iso = `${dateKey(stage.date)}T${stage.startTime}${offset}`;
+    const parsed = new Date(iso);
+
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatStartTime(stage, timeZone) {
+    const fallback = {
+      startTimeDisplay: sanitizeString(stage.startTime, "").slice(0, 5),
+      startTimeZoneLabel: "CEST"
+    };
+
+    if (timeZone === "Europe/Madrid") return fallback;
+
+    const date = stageStartDateTime(stage);
+    if (!date) return fallback;
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZoneName: "short"
+    }).formatToParts(date);
+
+    const hour = parts.find((p) => p.type === "hour")?.value;
+    const minute = parts.find((p) => p.type === "minute")?.value;
+    const tzName = parts.find((p) => p.type === "timeZoneName")?.value;
+
+    if (!hour || !minute) return fallback;
+
+    // "short" resolves to EST or EDT automatically depending on whether the
+    // stage date falls inside US daylight saving time.
+    return { startTimeDisplay: `${hour}:${minute}`, startTimeZoneLabel: sanitizeString(tzName, "ET") };
+  }
+
+  function decorateStage(stage, unit, timeZone) {
+    if (!stage) return stage;
+    return { ...stage, ...formatDistance(stage, unit), ...formatStartTime(stage, timeZone) };
+  }
+
+  const distanceUnit = resolveDistanceUnit(input);
+  const displayTimeZone = resolveDisplayTimeZone(input);
+
   const stagesRaw = await fetchJson(`/api/stage-${year}`);
 
   const stages = stagesRaw
     .filter((stage) => stage && stage.stage && stage.date)
     .sort((a, b) => Number(a.stage) - Number(b.stage))
-    .map(sanitizeStage);
+    .map(sanitizeStage)
+    .map((stage) => decorateStage(stage, distanceUnit, displayTimeZone));
 
   const firstStage = stages[0];
   const lastStage = stages[stages.length - 1];
@@ -333,6 +431,8 @@ async function run(input) {
       mode,
       previewStage: PREVIEW_STAGE,
       currentDateKey,
+      distanceUnit,
+      displayTimeZone,
       selectedStage: today.stage,
       selectedDate: today.date,
       nextStage: tomorrow.stage,

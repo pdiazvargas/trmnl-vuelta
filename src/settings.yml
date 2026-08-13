@@ -10,6 +10,20 @@ polling_url: https://racecenter.lavuelta.es/api/stage-2026
 polling_headers: ''
 polling_body: ''
 custom_fields:
+- keyname: distance_unit
+  name: Distance Unit
+  field_type: select
+  options:
+  - Kilometers
+  - Miles
+  default: Kilometers
+- keyname: display_timezone
+  name: Time Zone
+  field_type: select
+  options:
+  - CEST
+  - US Eastern
+  default: CEST
 - keyname: about_this_plugin
   name: About This Plugin
   field_type: author_bio
