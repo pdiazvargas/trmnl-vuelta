@@ -25,6 +25,8 @@ jobs:
         with:
           ruby-version: "4.0"
       - run: gem install trmnl_preview
-      - run: trmnlp push --force
+      # --id targets the existing "Vuelta a España Stages" plugin (414982).
+      # Without it, trmnlp push creates a brand-new orphaned plugin on every run.
+      - run: trmnlp push --force --id 414982
         env:
           TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}

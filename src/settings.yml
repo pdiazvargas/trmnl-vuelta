@@ -9,6 +9,27 @@ serverless_language: node
 polling_url: https://racecenter.lavuelta.es/api/stage-2026
 polling_headers: ''
 polling_body: ''
+id: 414982
+oauth_enabled: 'false'
+oauth_pkce_enabled: 'no'
+oauth_authorize_url: ''
+oauth_token_url: ''
+oauth_scopes: ''
+oauth_scope_separator: ''
+oauth_refresh_url: ''
+oauth_auth_params: ''
+oauth_token_headers: ''
+oauth_token_site: ''
+oauth_token_params: ''
+oauth_token_request_auth_method: ''
+oauth_body_format: ''
+oauth_token_response_metadata: ''
+oauth_authorization_method: ''
+oauth_refresh_params: ''
+oauth_token_field_name: ''
+oauth_expiry_field_name: ''
+oauth_expiry_strategy: ''
+oauth_fixed_expiry_ms: ''
 custom_fields:
 - keyname: distance_unit
   name: Distance Unit
@@ -31,4 +52,5 @@ custom_fields:
   category: sports,entertainment
   description: Fan-made La Vuelta a España Stage Dashboard for TRMNL. Shows today's stage, route, distance, type, start time, elevation profile, and tomorrow's stage preview. Not affiliated with, endorsed by, or sponsored by ASO or La Vuelta a España.
 name: Vuelta a España Stages
+description: ''
 refresh_interval: 15
