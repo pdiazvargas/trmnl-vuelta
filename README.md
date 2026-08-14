@@ -35,8 +35,10 @@ Then open `http://localhost:4567` to preview all four layouts against live data.
 
 ```sh
 gem install trmnl_preview
-trmnlp push
+trmnlp push --id 414982
 ```
+
+`--id` targets the existing "Vuelta a España Stages" plugin. Omitting it creates a new, disconnected plugin instance instead of updating the live one.
 
 Pushing requires a `TRMNL_API_KEY` (from your TRMNL account) set as the `TRMNL_API_KEY` secret on this repo, or exported in your shell for a manual push. The included GitHub Actions workflow (`.github/workflows/trmnl.yml`) lints on every PR and auto-pushes to TRMNL on merges to `main`.
 
