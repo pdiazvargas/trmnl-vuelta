@@ -97,6 +97,7 @@ async function run(input) {
   async function fetchElevationProfile(stageNumber) {
     const CHART_WIDTH = 720;
     const CHART_HEIGHT = 92;
+    const AXIS_HEIGHT = 16;
     const SAMPLE_POINTS = 100;
 
     const stagePadded = String(stageNumber).padStart(2, "0");
@@ -125,10 +126,20 @@ async function run(input) {
     if (!csvPathMatch) throw new Error("Could not locate profile CSV path");
 
     const csvText = await fetchText(`/${csvPathMatch[0]}`);
-    return parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, SAMPLE_POINTS });
+    return parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, AXIS_HEIGHT, SAMPLE_POINTS });
   }
 
-  function parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, SAMPLE_POINTS }) {
+  // Picks a km spacing for axis ticks so long stages don't end up with
+  // dozens of crowded gridlines.
+  function pickTickInterval(totalKm) {
+    const candidates = [10, 20, 25, 50];
+    for (const interval of candidates) {
+      if (totalKm / interval <= 14) return interval;
+    }
+    return 50;
+  }
+
+  function parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, AXIS_HEIGHT, SAMPLE_POINTS }) {
     const lines = csvText.trim().split("\n");
     const header = lines[0].split(";");
     const kmIdx = header.indexOf("kmdone");
@@ -161,7 +172,12 @@ async function run(input) {
     // (drawn above their point) never get pushed off the top of the chart.
     const MARKER_HEADROOM = 22;
     const BASELINE_MARGIN = 2;
-    const scaleX = (km) => Math.round((km / totalKm) * CHART_WIDTH);
+    // Inset the plotted range so the first/last axis labels (and the
+    // start/finish glyphs) sit inside the viewBox instead of straddling
+    // x=0/x=width, where the card's rounded corners clip them off.
+    const H_MARGIN = 14;
+    const scaleX = (km) =>
+      Math.round(H_MARGIN + (km / totalKm) * (CHART_WIDTH - 2 * H_MARGIN));
     const scaleY = (alt) =>
       Math.round(
         CHART_HEIGHT -
@@ -187,14 +203,40 @@ async function run(input) {
         y: scaleY(r.altitude),
         type: markerTypes[r.cptype],
         category: sanitizeString(r.category),
-        altitude: Math.round(r.altitude)
+        altitude: Math.round(r.altitude),
+        km: Math.round(r.km * 10) / 10
       }));
+
+    // Km-axis ticks along the baseline, plus a final tick at the true
+    // finish distance so the axis always ends on the real stage length
+    // rather than stopping short at the last round number.
+    const tickInterval = pickTickInterval(totalKm);
+    const ticks = [];
+    for (let km = 0; km <= totalKm; km += tickInterval) {
+      ticks.push({ x: scaleX(km), label: String(Math.round(km)) });
+    }
+    const lastTickKm = ticks.length
+      ? ((ticks[ticks.length - 1].x - H_MARGIN) / (CHART_WIDTH - 2 * H_MARGIN)) * totalKm
+      : 0;
+    if (totalKm - lastTickKm > tickInterval / 3) {
+      ticks.push({
+        x: scaleX(totalKm),
+        label: (Math.round(totalKm * 10) / 10).toFixed(1)
+      });
+    }
+    ticks.forEach((t, i) => {
+      if (i === 0) t.anchor = "start";
+      else if (i === ticks.length - 1) t.anchor = "end";
+      else t.anchor = "middle";
+    });
 
     return {
       width: CHART_WIDTH,
       height: CHART_HEIGHT,
+      totalHeight: CHART_HEIGHT + AXIS_HEIGHT,
       points,
       markers,
+      ticks,
       minAltitude: Math.round(minAlt),
       maxAltitude: Math.round(maxAlt),
       totalKm
