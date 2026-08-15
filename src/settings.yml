@@ -4,7 +4,7 @@ no_screen_padding: 'yes'
 dark_mode: 'no'
 static_data: ''
 polling_verb: get
-framework_version: 3.1.1
+framework_version: 3.2.0
 serverless_language: node
 polling_url: https://racecenter.lavuelta.es/api/stage-2026
 polling_headers: ''
