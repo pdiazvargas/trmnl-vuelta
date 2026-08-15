@@ -60,7 +60,7 @@
     background: #fbfaf5;
     overflow: hidden;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   }
 
   /* ── HEADER ── */
@@ -257,6 +257,29 @@
     letter-spacing: .4px;
   }
 
+  /* ── ROUTE DIAGRAM ── */
+  .vta-route-diagram {
+    width: 100%;
+    height: 46px;
+    border-top: 3px solid var(--ink);
+    background: #fbfaf5;
+    overflow: hidden;
+  }
+
+  .vta-route-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .vta-route-svg text {
+    letter-spacing: 0;
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  .vta-route-svg .waypoint-label { fill: var(--ink); }
+
   /* ── ELEVATION PROFILE ── */
   .vta-profile {
     width: 100%;
@@ -400,6 +423,38 @@
                 <rect x="{{ m.x | minus: 8 }}" y="{{ axis_y | minus: 10 }}" width="4" height="5" fill="#fbfaf5"></rect>
                 <rect x="{{ m.x | minus: 4 }}" y="{{ axis_y | minus: 5 }}" width="4" height="5" fill="#fbfaf5"></rect>
             {% endcase %}
+          {% endfor %}
+        </svg>
+      </div>
+    {% endif %}
+
+    <!-- ROUTE DIAGRAM -->
+    {% if routeDiagram %}
+      {%- assign rd_top_y = routeDiagram.baselineY | minus: 12 -%}
+      {%- assign rd_bottom_y = routeDiagram.baselineY | plus: 16 -%}
+      <div class="vta-route-diagram">
+        <svg viewBox="0 0 {{ routeDiagram.width }} {{ routeDiagram.height }}" preserveAspectRatio="none" class="vta-route-svg">
+          <line x1="0" y1="{{ routeDiagram.baselineY }}" x2="{{ routeDiagram.width }}" y2="{{ routeDiagram.baselineY }}" stroke="#111" stroke-width="1.5"></line>
+
+          {% for p in routeDiagram.points %}
+            {% case p.type %}
+              {% when 'start' %}
+                <path d="M {{ p.x }},{{ routeDiagram.baselineY | minus: 8 }} L {{ p.x }},{{ routeDiagram.baselineY | plus: 8 }} L {{ p.x | plus: 9 }},{{ routeDiagram.baselineY }} Z" fill="#111"></path>
+              {% when 'climb' %}
+                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="7" fill="#e2001a" stroke="#fbfaf5" stroke-width="1.5"></circle>
+                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">{{ p.category }}</text>
+              {% when 'sprint' %}
+                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="6" fill="#111"></circle>
+                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">S</text>
+              {% when 'finish' %}
+                <rect x="{{ p.x | minus: 8 }}" y="{{ routeDiagram.baselineY | minus: 8 }}" width="8" height="16" fill="#111" stroke="#fbfaf5" stroke-width=".5"></rect>
+                <rect x="{{ p.x | minus: 8 }}" y="{{ routeDiagram.baselineY | minus: 8 }}" width="4" height="8" fill="#fbfaf5"></rect>
+                <rect x="{{ p.x | minus: 4 }}" y="{{ routeDiagram.baselineY }}" width="4" height="8" fill="#fbfaf5"></rect>
+            {% endcase %}
+
+            {% if p.name %}
+              <text x="{{ p.x }}" y="{% if p.align == 'top' %}{{ rd_top_y }}{% else %}{{ rd_bottom_y }}{% endif %}" text-anchor="{{ p.anchor }}" class="waypoint-label">{{ p.name }}</text>
+            {% endif %}
           {% endfor %}
         </svg>
       </div>
