@@ -170,7 +170,7 @@ async function run(input) {
 
     // Reserve headroom above the curve's peak so marker circles/labels
     // (drawn above their point) never get pushed off the top of the chart.
-    const MARKER_HEADROOM = 22;
+    const MARKER_HEADROOM = 28;
     const BASELINE_MARGIN = 2;
     // Inset the plotted range so the first/last axis labels (and the
     // start/finish glyphs) sit inside the viewBox instead of straddling
@@ -417,6 +417,13 @@ async function run(input) {
     return String(dateString).slice(0, 10);
   }
 
+  function daysBetween(fromKey, toKey) {
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const from = new Date(`${fromKey}T00:00:00Z`);
+    const to = new Date(`${toKey}T00:00:00Z`);
+    return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
+  }
+
   function todayMadridKey() {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Madrid",
@@ -634,7 +641,8 @@ async function run(input) {
       ),
       stageNumber: sanitizeString(firstStage.stage),
       stage: sanitizeString(`STAGE ${firstStage.stage} OF ${stages.length}`),
-      year: String(year)
+      year: String(year),
+      daysToGo: String(Math.max(0, daysBetween(currentDateKey, dateKey(firstStage.date))))
     },
 
     debug: {

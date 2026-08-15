@@ -16,10 +16,8 @@
 {%- assign to = stage_today.arrivalCity.label | default: stage_today.to -%}
 {%- assign next_from = stage_tomorrow.departureCity.label | default: stage_tomorrow.from -%}
 {%- assign next_to = stage_tomorrow.arrivalCity.label | default: stage_tomorrow.to -%}
-{%- assign route_len = from.size | plus: to.size -%}
 {%- assign next_route_len = next_from.size | plus: next_to.size -%}
 {%- assign hero_image = stage_today.arrivalCity.content.image | default: stage_today.toImage | default: stage_today.departureCity.content.image | default: stage_today.fromImage -%}
-{%- assign elevation_gain = stage_today.elevationGain | default: stage_today.elevation_gain | default: stage_today.positiveElevation -%}
 {%- case stage_today.type -%}
   {%- when 'EQU' -%}{%- assign type_label = 'TEAM TIME TRIAL' -%}
   {%- when 'PAS' -%}{%- assign type_label = 'TIME TRIAL' -%}
@@ -31,12 +29,6 @@
   {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
   {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
 {% endcase %}
-
-{%- assign route_class = 'text--base' -%}
-{%- if route_len > 30 -%}{%- assign route_class = 'text--small' -%}{%- endif -%}
-
-{%- assign stat2_class = 'text--large' -%}
-{%- unless elevation_gain -%}{%- assign stat2_class = 'text--base' -%}{%- endunless -%}
 
 <style>
   .vta-layout,
@@ -217,7 +209,7 @@
     align-self: flex-start;
   }
 
-  .stage-route {
+  .stage-type {
     align-self: flex-start;
     line-height: 1;
     font-weight: 1000;
@@ -225,8 +217,6 @@
     white-space: nowrap;
     overflow: hidden;
   }
-
-  .stage-route .arrow { color: var(--red); }
 
   .stage-stat {
     min-width: 0;
@@ -261,7 +251,6 @@
   .vta-route-diagram {
     width: 100%;
     height: 46px;
-    border-top: 3px solid var(--ink);
     background: #fbfaf5;
     overflow: hidden;
   }
@@ -362,10 +351,10 @@
             <div class="gc-time text--base">{{ preRaceHeader.date | default: "AUGUST" }}</div>
           </div>
           <div class="vta-gc-item px--3 py--2">
-            <div class="gc-pos text--xlarge">{{ preRaceHeader.stageNumber | default: "1" }}</div>
+            <div class="gc-pos text--xlarge">{{ preRaceHeader.daysToGo | default: "-" }}</div>
             <div>
-              <div class="gc-name text--base">{{ preRaceHeader.stage | default: "STAGE 1 OF 21" }}</div>
-              <div class="gc-sub text--small mt--xsmall">GC STARTS AFTER STAGE 1</div>
+              <div class="gc-name text--base">DAYS TO GO</div>
+              <div class="gc-sub text--small mt--xsmall">UNTIL GRAND DÉPART</div>
             </div>
             <div class="gc-time text--base">{{ preRaceHeader.year | default: "2026" }}</div>
           </div>
@@ -464,26 +453,24 @@
     <div class="vta-bottom">
       <div class="stage-number flex flex--col flex--center-x flex--center-y">
         <div class="small text--small">STAGE</div>
-        <div class="num text--xxlarge">{{ stage_today.stage }}</div>
+        <div class="num text--xlarge">{{ stage_today.stage }}</div>
         <div class="small text--small">OF 21</div>
       </div>
-      <div class="stage-route-col flex flex--col flex--center-y px--4 py--3">
-        <div class="stage-date rounded--xsmall px--6 py--3 mb--xsmall text--small">{{ stage_today.date | date: "%a %d %B %Y" | upcase }}</div>
-        <div class="stage-route {{ route_class }}">
-          {{ from | upcase }}<span class="arrow px--4">›</span>{{ to | upcase }}
-        </div>
+      <div class="stage-route-col flex flex--col flex--center-y px--4 py--2">
+        <div class="stage-date rounded--xsmall px--4 py--2 mb--xsmall text--small">{{ stage_today.date | date: "%a %d %B %Y" | upcase }}</div>
+        <div class="stage-type text--base">{{ type_label }}</div>
       </div>
-      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--2 text--center">
         <div class="stage-stat-label text--small">DISTANCE</div>
         <div class="stage-stat-value text--large">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
         <div class="stage-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div>
       </div>
-      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
-        <div class="stage-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
-        <div class="stage-stat-value {{ stat2_class }}">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div>
-        <div class="stage-stat-unit text--small">{% if elevation_gain %}M{% endif %}</div>
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--2 text--center">
+        <div class="stage-stat-label text--small">MAX ALT</div>
+        <div class="stage-stat-value text--large">{{ elevationProfile.maxAltitude | default: "—" }}</div>
+        <div class="stage-stat-unit text--small">{% if elevationProfile.maxAltitude %}M{% endif %}</div>
       </div>
-      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--3 text--center">
+      <div class="stage-stat flex flex--col flex--center-x flex--center-y px--4 py--2 text--center">
         <div class="stage-stat-label text--small">START</div>
         <div class="stage-stat-value text--large">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div>
         <div class="stage-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div>
