@@ -170,7 +170,7 @@ async function run(input) {
 
     // Reserve headroom above the curve's peak so marker circles/labels
     // (drawn above their point) never get pushed off the top of the chart.
-    const MARKER_HEADROOM = 22;
+    const MARKER_HEADROOM = 28;
     const BASELINE_MARGIN = 2;
     // Inset the plotted range so the first/last axis labels (and the
     // start/finish glyphs) sit inside the viewBox instead of straddling
@@ -243,8 +243,185 @@ async function run(input) {
     };
   }
 
+  // Checkpoint place names come through as road-book notes ("PM 3ª Col de
+  // Saint Andrieu  desnivel 227 mts. distancia 4,7 km porcentaje 4,8%"). Strip
+  // the category prefix and trailing gradient stats to get a clean name.
+  // Returns plain (unescaped) text—callers sanitize after truncating so an
+  // HTML entity never gets sliced in half.
+  function cleanWaypointName(str) {
+    if (!str) return "";
+    let s = String(str);
+    s = s.replace(/^PM\s*\d+ª\s*/i, "");
+    s = s.split(/\s+desnivel\b/i)[0];
+    s = s.replace(/\bmeta$/i, "");
+    s = s.replace(/\s+/g, " ").trim();
+    return s;
+  }
+
+  function truncateLabel(str, max) {
+    if (!str) return "";
+    return str.length > max ? `${str.slice(0, max - 1)}…` : str;
+  }
+
+  // Truncates plain text, then escapes it—escaping first risks slicing an
+  // HTML entity (e.g. "&#39;") in half.
+  function truncateAndSanitize(str, max) {
+    return sanitizeString(truncateLabel(str, max));
+  }
+
+  // The checkpoint API's actual shape is a single-element array wrapping an
+  // index-keyed object alongside unrelated metadata fields
+  // ([{ "0": {...}, "1": {...}, "_id": "...", "_updatedAt": 123 }]) rather
+  // than a flat array of checkpoints—normalize whatever shape shows up
+  // defensively, picking out only the numerically-keyed entries.
+  function normalizeCheckpoints(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      const first = raw[0];
+      if (first && typeof first === "object" && !Array.isArray(first)) {
+        const indexed = Object.entries(first)
+          .filter(([key, value]) => /^\d+$/.test(key) && value && typeof value === "object")
+          .map(([, value]) => value);
+        return indexed.length > 0 ? indexed : raw;
+      }
+      return raw;
+    }
+    if (raw.data) return Array.isArray(raw.data) ? raw.data : Object.values(raw.data);
+    if (raw.checkpoints) return Array.isArray(raw.checkpoints) ? raw.checkpoints : Object.values(raw.checkpoints);
+    return [];
+  }
+
+  function classifyCheckpoint(cp) {
+    const types = Array.isArray(cp.checkpointTypes) ? cp.checkpointTypes.map((t) => t.type) : [];
+    if (types.includes("arrival")) return "finish";
+    if (Array.isArray(cp.checkpointSummits) && cp.checkpointSummits.length) return "climb";
+    if (types.includes("sprint")) return "sprint";
+    if (types.includes("real") || types.includes("fictive")) return "start";
+    return null;
+  }
+
+  function pickEvenly(list, count) {
+    if (list.length <= count) return list;
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const idx = Math.round((i * (list.length - 1)) / (count - 1));
+      if (!result.includes(list[idx])) result.push(list[idx]);
+    }
+    return result;
+  }
+
+  // Most checkpoints are unlabeled road-book turns/tunnels with no
+  // coordinates—only a handful (start, categorized climbs, intermediate
+  // sprints, finish) carry lat/lng. That's too sparse to trace the actual
+  // road, so this renders a schematic sequence of named waypoints along the
+  // stage's km axis rather than a literal map.
+  function buildRouteDiagram(checkpointRaw, stage) {
+    const WIDTH = 720;
+    const HEIGHT = 46;
+    const H_MARGIN = 16;
+    const LABEL_MAX = 13;
+    const MAX_INTERMEDIATE = 3;
+
+    const checkpoints = normalizeCheckpoints(checkpointRaw);
+    const geo = checkpoints.filter(
+      (cp) =>
+        cp &&
+        typeof cp.latitude === "number" &&
+        typeof cp.longitude === "number" &&
+        typeof cp.length === "number"
+    );
+
+    if (geo.length < 2) return null;
+
+    const byKm = [...geo].sort((a, b) => a.length - b.length);
+
+    const classified = byKm.map((cp) => {
+      const type = classifyCheckpoint(cp);
+      let name = null;
+      let category = null;
+
+      if (type === "climb") {
+        const summit = cp.checkpointSummits[0]?.summit;
+        name = cleanWaypointName(summit?.name || cp.place);
+        category = sanitizeString(cp.checkpointSummits[0]?.code, "");
+      } else if (type === "sprint") {
+        name = cleanWaypointName(cp.place);
+      }
+
+      return { km: cp.length, type, name, category };
+    });
+
+    const startKm = byKm[0].length;
+    const finishKm = byKm[byKm.length - 1].length;
+
+    const intermediate = classified
+      .filter(
+        (w) =>
+          (w.type === "climb" || w.type === "sprint") &&
+          w.name &&
+          w.km > startKm + 1 &&
+          w.km < finishKm - 1
+      )
+      .filter((w, i, arr) => arr.findIndex((x) => Math.abs(x.km - w.km) < 1) === i);
+
+    const climbs = intermediate.filter((w) => w.type === "climb");
+    const sprints = intermediate.filter((w) => w.type === "sprint");
+    let selected = pickEvenly(climbs, MAX_INTERMEDIATE);
+    if (selected.length < MAX_INTERMEDIATE) {
+      selected = selected.concat(pickEvenly(sprints, MAX_INTERMEDIATE - selected.length));
+    }
+    selected.sort((a, b) => a.km - b.km);
+
+    const totalKm = finishKm || stage.length || 1;
+    const scaleX = (km) => Math.round(H_MARGIN + (km / totalKm) * (WIDTH - 2 * H_MARGIN));
+
+    const ordered = [{ km: startKm, type: "start" }, ...selected, { km: finishKm, type: "finish" }];
+
+    let intermediateIndex = 0;
+    const points = ordered.map((w) => {
+      let anchor = "middle";
+      let align;
+      // Start/finish names come from `stage`, already sanitized upstream by
+      // sanitizeStage()—only truncate. Climb/sprint names are raw checkpoint
+      // text and need both truncating and escaping.
+      let name;
+
+      if (w.type === "start") {
+        name = truncateLabel(stage.departureCity?.label || stage.from || "START", LABEL_MAX);
+        anchor = "start";
+        align = "bottom";
+      } else if (w.type === "finish") {
+        name = truncateLabel(stage.arrivalCity?.label || stage.to || "FINISH", LABEL_MAX);
+        anchor = "end";
+        align = "bottom";
+      } else {
+        name = truncateAndSanitize(w.name, LABEL_MAX);
+        align = intermediateIndex % 2 === 0 ? "top" : "bottom";
+        intermediateIndex++;
+      }
+
+      return {
+        x: scaleX(w.km),
+        type: w.type,
+        category: w.category || null,
+        name,
+        anchor,
+        align
+      };
+    });
+
+    return { width: WIDTH, height: HEIGHT, baselineY: 26, points };
+  }
+
   function dateKey(dateString) {
     return String(dateString).slice(0, 10);
+  }
+
+  function daysBetween(fromKey, toKey) {
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const from = new Date(`${fromKey}T00:00:00Z`);
+    const to = new Date(`${toKey}T00:00:00Z`);
+    return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
   }
 
   function todayMadridKey() {
@@ -424,21 +601,18 @@ async function run(input) {
   }
 
   let routePoints = [];
+  let routeDiagram = null;
 
   try {
     const checkpointRaw = await fetchJson(
       `/api/checkpoint-${year}-${today.stage}`
     );
 
-    if (Array.isArray(checkpointRaw)) {
-      routePoints = checkpointRaw;
-    } else if (checkpointRaw?.data) {
-      routePoints = checkpointRaw.data;
-    } else if (checkpointRaw?.checkpoints) {
-      routePoints = checkpointRaw.checkpoints;
-    }
+    routePoints = normalizeCheckpoints(checkpointRaw);
+    routeDiagram = buildRouteDiagram(checkpointRaw, today);
   } catch (error) {
     routePoints = [];
+    routeDiagram = null;
   }
 
   let elevationProfile = null;
@@ -454,6 +628,7 @@ async function run(input) {
     tomorrow,
     gc,
     routePoints,
+    routeDiagram,
     elevationProfile,
 
     vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
@@ -466,7 +641,8 @@ async function run(input) {
       ),
       stageNumber: sanitizeString(firstStage.stage),
       stage: sanitizeString(`STAGE ${firstStage.stage} OF ${stages.length}`),
-      year: String(year)
+      year: String(year),
+      daysToGo: String(Math.max(0, daysBetween(currentDateKey, dateKey(firstStage.date))))
     },
 
     debug: {
@@ -482,6 +658,7 @@ async function run(input) {
       lastStage: lastStage.stage,
       gcCount: gc.length,
       routePointCount: routePoints.length,
+      routeWaypointCount: routeDiagram ? routeDiagram.points.length : 0,
       hasElevationProfile: !!elevationProfile
     }
   };

@@ -6,7 +6,7 @@ Forked from the "Tour de France Stages" plugin, pointed at La Vuelta instead of 
 
 ![Full layout preview](docs/preview-full.png)
 
-*Live preview via `trmnlp serve`, showing the actual 2026 Grand Départ (Monaco, stage 1) pulled from `racecenter.lavuelta.es`.*
+*Live preview via `trmnlp serve`, showing Stage 4 (Andorra la Vella mountain loop, 2026 route) pulled from `racecenter.lavuelta.es`.*
 
 ## How it works
 
