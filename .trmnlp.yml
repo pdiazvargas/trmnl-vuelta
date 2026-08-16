@@ -8,6 +8,7 @@ watch:
 
 # values of custom fields (defined in src/settings.yml)
 custom_fields:
+  season: '2025'
   distance_unit: Kilometers
   display_timezone: CEST
 

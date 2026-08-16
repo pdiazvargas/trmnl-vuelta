@@ -1,10 +1,12 @@
 {%- comment -%}
   Shared computed variables for all Vuelta a España Stages view sizes.
-  distance_unit and display_timezone (custom_fields.distance_unit / custom_fields.display_timezone)
-  are read in transform.js as input.custom_fields, and applied there rather than in this markup —
-  see the distanceValue/distanceUnitLabel/startTimeDisplay/startTimeZoneLabel fields below.
+  season, distance_unit, and display_timezone (custom_fields.season / custom_fields.distance_unit /
+  custom_fields.display_timezone) are read in transform.js as input.custom_fields, and applied there
+  rather than in this markup — season picks which year's stage/ranking data is fetched; see the
+  distanceValue/distanceUnitLabel/startTimeDisplay/startTimeZoneLabel fields below for the others.
 {%- endcomment -%}
 
+{%- assign season = season | default: data.season -%}
 {%- assign stages = stages | default: data.stages | default: data -%}
 {%- assign stage_today = today | default: data.today -%}
 {%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}

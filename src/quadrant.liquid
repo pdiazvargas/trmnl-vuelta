@@ -24,6 +24,6 @@
 
 <div class="title_bar">
   <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
-  <span class="title">Vuelta a España</span>
+  <span class="title">Vuelta a España {{ season }}</span>
   <span class="instance">{% if has_gc %}{{ gc_leader.name | upcase }} · {{ gc_leader.time }}{% else %}{{ preRaceHeader.daysToGo | default: "-" }} DAYS TO GO{% endif %}</span>
 </div>

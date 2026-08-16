@@ -1,5 +1,4 @@
 async function run(input) {
-  const year = 2026;
   const baseUrl = "https://racecenter.lavuelta.es";
 
   const PREVIEW_STAGE = null;
@@ -472,6 +471,12 @@ async function run(input) {
     return fallback;
   }
 
+  function resolveSeason(input) {
+    const raw = String(customField(input, "season", "2025"));
+    const match = raw.match(/\d{4}/);
+    return match ? match[0] : "2025";
+  }
+
   function resolveDistanceUnit(input) {
     const raw = String(customField(input, "distance_unit", "Kilometers"));
     return /mile|mi\b/i.test(raw) ? "mi" : "km";
@@ -548,6 +553,7 @@ async function run(input) {
 
   const distanceUnit = resolveDistanceUnit(input);
   const displayTimeZone = resolveDisplayTimeZone(input);
+  const year = resolveSeason(input);
 
   const stagesRaw = await fetchJson(`/api/stage-${year}`);
 
@@ -637,6 +643,7 @@ async function run(input) {
     routePoints,
     routeDiagram,
     elevationProfile,
+    season: year,
 
     vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
 
@@ -654,6 +661,7 @@ async function run(input) {
 
     debug: {
       mode,
+      season: year,
       previewStage: PREVIEW_STAGE,
       currentDateKey,
       distanceUnit,
