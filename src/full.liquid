@@ -8,10 +8,28 @@
         <span class="label">STAGE</span>
       </div>
 
-      <div class="flex flex--col flex--center-y gap--small">
-        <span class="title title--base" data-clamp="1">{{ from | upcase }}</span>
-        <span class="title title--base" data-clamp="1">› {{ to | upcase }}</span>
-        <span class="label label--gray">{{ type_label }} · {{ stage_today.date | date: "%a %d %b" | upcase }}</span>
+      <div class="flex flex--col gap--xsmall">
+        <div class="item">
+          <div class="meta"></div>
+          <div class="content">
+            <span class="value value--small" data-clamp="1">{{ from | upcase }}</span>
+            <span class="label label--small">FROM</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="meta"></div>
+          <div class="content">
+            <span class="value value--small" data-clamp="1">{{ to | upcase }}</span>
+            <span class="label label--small">TO</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="meta"></div>
+          <div class="content">
+            <span class="value value--small" data-clamp="1">{{ type_label }}</span>
+            <span class="label label--small">TYPE</span>
+          </div>
+        </div>
       </div>
     </div>
 
