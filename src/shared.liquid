@@ -6,6 +6,7 @@
   distanceValue/distanceUnitLabel/startTimeDisplay/startTimeZoneLabel fields below for the others.
 {%- endcomment -%}
 
+{%- assign season = season | default: data.season -%}
 {%- assign stages = stages | default: data.stages | default: data -%}
 {%- assign stage_today = today | default: data.today -%}
 {%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}

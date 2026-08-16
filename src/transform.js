@@ -643,6 +643,7 @@ async function run(input) {
     routePoints,
     routeDiagram,
     elevationProfile,
+    season: year,
 
     vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
 
