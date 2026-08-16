@@ -1,8 +1,6 @@
 async function run(input) {
   const baseUrl = "https://racecenter.lavuelta.es";
 
-  const PREVIEW_STAGE = null;
-
   // Separate regex for checking (no g flag) vs replacing (g flag)
   const HAS_UNSAFE_CHARS = /[<>&"'`]/;
   const UNSAFE_CHAR_REGEX = /[<>&"'`]/g;
@@ -26,6 +24,10 @@ async function run(input) {
     return str.replace(UNSAFE_CHAR_REGEX, (char) => HTML_ESCAPE_MAP[char]);
   }
 
+  function sanitizeCity(city) {
+    return city ? { ...city, label: sanitizeString(city.label) } : city;
+  }
+
   function sanitizeStage(stage) {
     if (!stage || typeof stage !== "object") return stage;
 
@@ -36,20 +38,8 @@ async function run(input) {
       startTime: sanitizeString(stage.startTime),
       endTime: sanitizeString(stage.endTime),
       type: sanitizeString(stage.type),
-      departureCity: stage.departureCity
-        ? {
-            ...stage.departureCity,
-            label: sanitizeString(stage.departureCity.label),
-            content: stage.departureCity.content
-          }
-        : stage.departureCity,
-      arrivalCity: stage.arrivalCity
-        ? {
-            ...stage.arrivalCity,
-            label: sanitizeString(stage.arrivalCity.label),
-            content: stage.arrivalCity.content
-          }
-        : stage.arrivalCity
+      departureCity: sanitizeCity(stage.departureCity),
+      arrivalCity: sanitizeCity(stage.arrivalCity)
     };
   }
 
@@ -94,11 +84,6 @@ async function run(input) {
   // reshapes their build output) throws and the caller falls back to no
   // profile rather than a broken render.
   async function fetchElevationProfile(stageNumber) {
-    const CHART_WIDTH = 720;
-    const CHART_HEIGHT = 92;
-    const AXIS_HEIGHT = 16;
-    const SAMPLE_POINTS = 100;
-
     const stagePadded = String(stageNumber).padStart(2, "0");
     const csvKey = `./${year}/profile-${stagePadded}-tiny.csv`;
     const escapedKey = csvKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -125,7 +110,14 @@ async function run(input) {
     if (!csvPathMatch) throw new Error("Could not locate profile CSV path");
 
     const csvText = await fetchText(`/${csvPathMatch[0]}`);
-    return parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, AXIS_HEIGHT, SAMPLE_POINTS });
+    return parseElevationCsv(csvText);
+  }
+
+  // Scales a km-along-stage value onto a chart's horizontal pixel axis,
+  // inset by `margin` on each side. Shared by the elevation profile and the
+  // schematic route diagram, which both plot points along a km axis.
+  function scaleKmToX(km, totalKm, width, margin) {
+    return Math.round(margin + (km / totalKm) * (width - 2 * margin));
   }
 
   // Picks a km spacing for axis ticks so long stages don't end up with
@@ -138,7 +130,12 @@ async function run(input) {
     return 50;
   }
 
-  function parseElevationCsv(csvText, { CHART_WIDTH, CHART_HEIGHT, AXIS_HEIGHT, SAMPLE_POINTS }) {
+  function parseElevationCsv(csvText) {
+    const CHART_WIDTH = 720;
+    const CHART_HEIGHT = 92;
+    const AXIS_HEIGHT = 16;
+    const SAMPLE_POINTS = 100;
+
     const lines = csvText.trim().split("\n");
     const header = lines[0].split(";");
     const kmIdx = header.indexOf("kmdone");
@@ -175,8 +172,7 @@ async function run(input) {
     // start/finish glyphs) sit inside the viewBox instead of straddling
     // x=0/x=width, where the card's rounded corners clip them off.
     const H_MARGIN = 14;
-    const scaleX = (km) =>
-      Math.round(H_MARGIN + (km / totalKm) * (CHART_WIDTH - 2 * H_MARGIN));
+    const scaleX = (km) => scaleKmToX(km, totalKm, CHART_WIDTH, H_MARGIN);
     const scaleY = (alt) =>
       Math.round(
         CHART_HEIGHT -
@@ -321,14 +317,13 @@ async function run(input) {
   // sprints, finish) carry lat/lng. That's too sparse to trace the actual
   // road, so this renders a schematic sequence of named waypoints along the
   // stage's km axis rather than a literal map.
-  function buildRouteDiagram(checkpointRaw, stage) {
+  function buildRouteDiagram(checkpoints, stage) {
     const WIDTH = 720;
     const HEIGHT = 46;
     const H_MARGIN = 16;
     const LABEL_MAX = 13;
     const MAX_INTERMEDIATE = 3;
 
-    const checkpoints = normalizeCheckpoints(checkpointRaw);
     const geo = checkpoints.filter(
       (cp) =>
         cp &&
@@ -379,7 +374,7 @@ async function run(input) {
     selected.sort((a, b) => a.km - b.km);
 
     const totalKm = finishKm || stage.length || 1;
-    const scaleX = (km) => Math.round(H_MARGIN + (km / totalKm) * (WIDTH - 2 * H_MARGIN));
+    const scaleX = (km) => scaleKmToX(km, totalKm, WIDTH, H_MARGIN);
 
     const ordered = [{ km: startKm, type: "start" }, ...selected, { km: finishKm, type: "finish" }];
 
@@ -546,14 +541,48 @@ async function run(input) {
     return { startTimeDisplay: `${hour}:${minute}`, startTimeZoneLabel: sanitizeString(tzName, "ET") };
   }
 
+  const STAGE_TYPE_LABELS = {
+    EQU: "TEAM TIME TRIAL",
+    PAS: "TIME TRIAL",
+    PLN: "FLAT",
+    MMG: "MED. MOUNTAIN",
+    HMG: "MOUNTAIN",
+    VAA: "HILLY",
+    PAA: "HILLY",
+    VAL: "HILLY"
+  };
+
   function decorateStage(stage, unit, timeZone) {
     if (!stage) return stage;
-    return { ...stage, ...formatDistance(stage, unit), ...formatStartTime(stage, timeZone) };
+    return {
+      ...stage,
+      ...formatDistance(stage, unit),
+      ...formatStartTime(stage, timeZone),
+      typeLabel: STAGE_TYPE_LABELS[stage.type] || stage.type || "STAGE"
+    };
   }
 
   const distanceUnit = resolveDistanceUnit(input);
   const displayTimeZone = resolveDisplayTimeZone(input);
   const year = resolveSeason(input);
+
+  // Ranking only depends on `year`, so kick it off alongside the stage list
+  // fetch instead of waiting for it — same eventual data, one less
+  // round-trip on the critical path.
+  const gcPromise = fetchJson(`/api/ranking-${year}`)
+    .then((rankingRaw) => {
+      const rankingList = Array.isArray(rankingRaw)
+        ? rankingRaw
+        : rankingRaw?.data || rankingRaw?.rankings || [];
+
+      return rankingList.slice(0, 3).map((r) => ({
+        name: sanitizeString(r.name || r.riderName || r.fullName),
+        team: sanitizeString(r.team || r.teamCode || r.teamName),
+        time: r.time || r.totalTime,
+        gap: r.gap || r.diff || r.timeGap
+      }));
+    })
+    .catch(() => []);
 
   const stagesRaw = await fetchJson(`/api/stage-${year}`);
 
@@ -570,12 +599,7 @@ async function run(input) {
   let today;
   let mode;
 
-  if (PREVIEW_STAGE !== null) {
-    today =
-      stages.find((stage) => Number(stage.stage) === Number(PREVIEW_STAGE)) ||
-      firstStage;
-    mode = "preview_stage";
-  } else if (currentDateKey < dateKey(firstStage.date)) {
+  if (currentDateKey < dateKey(firstStage.date)) {
     today = firstStage;
     mode = "before_tour";
   } else if (currentDateKey > dateKey(lastStage.date)) {
@@ -589,52 +613,26 @@ async function run(input) {
     mode = "during_tour";
   }
 
-  const todayIndex = stages.findIndex(
-    (stage) => Number(stage.stage) === Number(today.stage)
-  );
+  const todayIndex = stages.indexOf(today);
 
   const tomorrow = stages[todayIndex + 1] || today;
 
-  let gc = [];
+  // Checkpoint/route-diagram and the elevation profile both only need
+  // `today.stage`, so run them concurrently rather than one after another.
+  const checkpointPromise = fetchJson(`/api/checkpoint-${year}-${today.stage}`)
+    .then((checkpointRaw) => {
+      const routePoints = normalizeCheckpoints(checkpointRaw);
+      return { routePoints, routeDiagram: buildRouteDiagram(routePoints, today) };
+    })
+    .catch(() => ({ routePoints: [], routeDiagram: null }));
 
-  try {
-    const rankingRaw = await fetchJson(`/api/ranking-${year}`);
-    const rankingList = Array.isArray(rankingRaw)
-      ? rankingRaw
-      : rankingRaw?.data || rankingRaw?.rankings || [];
+  const elevationPromise = fetchElevationProfile(today.stage).catch(() => null);
 
-    gc = rankingList.slice(0, 3).map((r) => ({
-      name: sanitizeString(r.name || r.riderName || r.fullName),
-      team: sanitizeString(r.team || r.teamCode || r.teamName),
-      time: r.time || r.totalTime,
-      gap: r.gap || r.diff || r.timeGap
-    }));
-  } catch (error) {
-    gc = [];
-  }
-
-  let routePoints = [];
-  let routeDiagram = null;
-
-  try {
-    const checkpointRaw = await fetchJson(
-      `/api/checkpoint-${year}-${today.stage}`
-    );
-
-    routePoints = normalizeCheckpoints(checkpointRaw);
-    routeDiagram = buildRouteDiagram(checkpointRaw, today);
-  } catch (error) {
-    routePoints = [];
-    routeDiagram = null;
-  }
-
-  let elevationProfile = null;
-
-  try {
-    elevationProfile = await fetchElevationProfile(today.stage);
-  } catch (error) {
-    elevationProfile = null;
-  }
+  const [gc, { routePoints, routeDiagram }, elevationProfile] = await Promise.all([
+    gcPromise,
+    checkpointPromise,
+    elevationPromise
+  ]);
 
   return {
     today,
@@ -644,15 +642,14 @@ async function run(input) {
     routeDiagram,
     elevationProfile,
     season: year,
+    totalStages: stages.length,
 
     vueltaLogo: "https://www.lavuelta.es/img/global/logo-reversed@2x.png",
 
     preRaceHeader: {
       title: "VUELTA STARTS",
       date: sanitizeString(formatStartDate(firstStage.date)),
-      location: sanitizeString(
-        firstStage.departureCity?.label || firstStage.from || "START"
-      ),
+      location: firstStage.departureCity?.label || firstStage.from || "START",
       stageNumber: sanitizeString(firstStage.stage),
       stage: sanitizeString(`STAGE ${firstStage.stage} OF ${stages.length}`),
       year: String(year),
@@ -662,7 +659,6 @@ async function run(input) {
     debug: {
       mode,
       season: year,
-      previewStage: PREVIEW_STAGE,
       currentDateKey,
       distanceUnit,
       displayTimeZone,

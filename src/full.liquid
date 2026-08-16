@@ -37,14 +37,14 @@
       <div class="item">
         <div class="meta"></div>
         <div class="content">
-          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }} {{ stage_today.distanceUnitLabel | default: "KM" }}</span>
+          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.distanceValue }} {{ stage_today.distanceUnitLabel }}</span>
           <span class="label label--small">DISTANCE</span>
         </div>
       </div>
       <div class="item">
         <div class="meta"></div>
         <div class="content">
-          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }} {{ stage_today.startTimeZoneLabel | default: "CEST" }}</span>
+          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.startTimeDisplay }} {{ stage_today.startTimeZoneLabel }}</span>
           <span class="label label--small">START</span>
         </div>
       </div>
@@ -111,7 +111,7 @@
   {% if stage_tomorrow %}
     <div class="flex flex--row flex--center-y gap--small w--full">
       <span class="label label--filled no-shrink" data-clamp="1">STAGE {{ stage_tomorrow.stage }}</span>
-      <span class="label label--gray" data-clamp="1">{{ next_from | upcase }} › {{ next_to | upcase }} · {{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }} · {{ next_type_label }} · {{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
+      <span class="label label--gray" data-clamp="1">{{ next_from | upcase }} › {{ next_to | upcase }} · {{ stage_tomorrow.distanceValue }} {{ stage_tomorrow.distanceUnitLabel }} · {{ next_type_label }} · {{ stage_tomorrow.startTimeDisplay }} {{ stage_tomorrow.startTimeZoneLabel }}</span>
     </div>
   {% endif %}
 
@@ -120,5 +120,5 @@
 <div class="title_bar">
   <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
   <span class="title">Vuelta a España {{ season }}</span>
-  <span class="instance">Stage {{ stage_today.stage }} of 21 · {{ stage_today.date | date: "%b %d" }}</span>
+  <span class="instance">Stage {{ stage_today.stage }} of {{ total_stages }} · {{ stage_today.date | date: "%b %d" }}</span>
 </div>

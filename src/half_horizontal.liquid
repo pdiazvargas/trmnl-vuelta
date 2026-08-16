@@ -15,14 +15,14 @@
       <div class="item">
         <div class="meta"></div>
         <div class="content">
-          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }} {{ stage_today.distanceUnitLabel | default: "KM" }}</span>
+          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.distanceValue }} {{ stage_today.distanceUnitLabel }}</span>
           <span class="label label--small">DISTANCE</span>
         </div>
       </div>
       <div class="item">
         <div class="meta"></div>
         <div class="content">
-          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }} {{ stage_today.startTimeZoneLabel | default: "CEST" }}</span>
+          <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.startTimeDisplay }} {{ stage_today.startTimeZoneLabel }}</span>
           <span class="label label--small">START</span>
         </div>
       </div>
