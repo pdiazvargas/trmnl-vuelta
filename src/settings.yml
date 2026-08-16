@@ -31,6 +31,14 @@ oauth_expiry_field_name: ''
 oauth_expiry_strategy: ''
 oauth_fixed_expiry_ms: ''
 custom_fields:
+- keyname: season
+  name: Season
+  field_type: select
+  options:
+  - '2026'
+  - '2025'
+  default: '2025'
+  description: "Which year's results to show. The 2026 Vuelta starts Aug 22 — defaults to last year's final classification and stage winners until then."
 - keyname: distance_unit
   name: Distance Unit
   field_type: select

@@ -10,7 +10,9 @@ Forked from the "Tour de France Stages" plugin, pointed at La Vuelta instead of 
 
 ## How it works
 
-The plugin uses TRMNL's [polling + serverless transform](https://docs.usetrmnl.com/go/private-plugins/create-a-plugin) strategy. `src/transform.js` is executed by TRMNL itself: it fetches the current year's stage list, checkpoint, and ranking data from `racecenter.lavuelta.es`, figures out which stage is "today" (before / during / after the race), and returns a shaped payload that the Liquid templates in `src/` render.
+The plugin uses TRMNL's [polling + serverless transform](https://docs.usetrmnl.com/go/private-plugins/create-a-plugin) strategy. `src/transform.js` is executed by TRMNL itself: it fetches the selected season's stage list, checkpoint, and ranking data from `racecenter.lavuelta.es`, figures out which stage is "today" (before / during / after that season's race), and returns a shaped payload that the Liquid templates in `src/` render.
+
+The **Season** custom field controls which year's data is fetched. It defaults to 2025 since the 2026 Vuelta doesn't start until Aug 22 — until then, switching seasons is the only way to see 2026 pull anything (and even then there's nothing to show before the race starts). Once a season's race has concluded, the plugin naturally settles into showing that season's final classification and last stage as "today."
 
 No separate backend or hosting is required — everything runs inside the TRMNL plugin.
 
