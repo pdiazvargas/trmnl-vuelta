@@ -1,0 +1,59 @@
+{%- comment -%}
+  Shared computed variables for all Vuelta a España Stages view sizes.
+  distance_unit and display_timezone (custom_fields.distance_unit / custom_fields.display_timezone)
+  are read in transform.js as input.custom_fields, and applied there rather than in this markup —
+  see the distanceValue/distanceUnitLabel/startTimeDisplay/startTimeZoneLabel fields below.
+{%- endcomment -%}
+
+{%- assign stages = stages | default: data.stages | default: data -%}
+{%- assign stage_today = today | default: data.today -%}
+{%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}
+{%- if stage_today == blank and stages -%}
+  {%- assign stage_today = stages[0] -%}
+{%- endif -%}
+{%- if stage_tomorrow == blank and stages -%}
+  {%- assign stage_tomorrow = stages[1] -%}
+{%- endif -%}
+
+{%- assign from = stage_today.departureCity.label | default: stage_today.from | default: "Start city" -%}
+{%- assign to = stage_today.arrivalCity.label | default: stage_today.to | default: "Finish city" -%}
+{%- assign next_from = stage_tomorrow.departureCity.label | default: stage_tomorrow.from | default: "Next start" -%}
+{%- assign next_to = stage_tomorrow.arrivalCity.label | default: stage_tomorrow.to | default: "Next finish" -%}
+
+{%- case stage_today.type -%}
+  {%- when 'EQU' -%}{%- assign type_label = 'TEAM TIME TRIAL' -%}
+  {%- when 'PAS' -%}{%- assign type_label = 'TIME TRIAL' -%}
+  {%- when 'PLN' -%}{%- assign type_label = 'FLAT' -%}
+  {%- when 'MMG' -%}{%- assign type_label = 'MED. MOUNTAIN' -%}
+  {%- when 'HMG' -%}{%- assign type_label = 'MOUNTAIN' -%}
+  {%- when 'VAA' -%}{%- assign type_label = 'HILLY' -%}
+  {%- when 'PAA' -%}{%- assign type_label = 'HILLY' -%}
+  {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
+  {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
+{%- endcase -%}
+
+{%- case stage_tomorrow.type -%}
+  {%- when 'EQU' -%}{%- assign next_type_label = 'TEAM TIME TRIAL' -%}
+  {%- when 'PAS' -%}{%- assign next_type_label = 'TIME TRIAL' -%}
+  {%- when 'PLN' -%}{%- assign next_type_label = 'FLAT' -%}
+  {%- when 'MMG' -%}{%- assign next_type_label = 'MED. MOUNTAIN' -%}
+  {%- when 'HMG' -%}{%- assign next_type_label = 'MOUNTAIN' -%}
+  {%- when 'VAA' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- when 'PAA' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- when 'VAL' -%}{%- assign next_type_label = 'HILLY' -%}
+  {%- else -%}{%- assign next_type_label = stage_tomorrow.type | default: 'STAGE' -%}
+{%- endcase -%}
+
+{%- assign has_gc = false -%}
+{%- if gc and gc.size > 0 -%}
+  {%- assign has_gc = true -%}
+  {%- assign gc_leader = gc[0] -%}
+{%- endif -%}
+
+{%- comment -%}
+  Inline SVG mark for the title_bar icon — avoids a remote logo fetch (network requests
+  can fail and title_bar icons should be inline SVG per the framework guide). Simple
+  two-peak mountain silhouette, single black fill, 24x24.
+{%- endcomment -%}
+{%- capture title_bar_icon_svg -%}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M2 19L9 6L12.8 12L15.5 8.5L22 19Z"/></svg>{%- endcapture -%}
+{%- assign title_bar_icon = title_bar_icon_svg | base64_encode -%}
