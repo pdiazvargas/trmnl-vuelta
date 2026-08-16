@@ -1,422 +1,131 @@
-{%- assign stages = stages | default: data.stages | default: data -%}
-{%- assign stage_today = today | default: data.today -%}
-{%- assign stage_tomorrow = tomorrow | default: data.tomorrow -%}
+<div class="layout layout--col gap--small">
 
-{%- if stage_today == blank and stages -%}
-  {%- assign stage_today = stages[0] -%}
-{%- endif -%}
-{%- if stage_tomorrow == blank and stages -%}
-  {%- assign stage_tomorrow = stages[1] -%}
-{%- endif -%}
-
-{%- assign from = stage_today.departureCity.label | default: stage_today.from | default: "Start city" -%}
-{%- assign to = stage_today.arrivalCity.label | default: stage_today.to | default: "Finish city" -%}
-{%- assign hero_image = stage_today.departureCity.content.image | default: stage_today.fromImage | default: stage_today.arrivalCity.content.image | default: stage_today.toImage -%}
-
-{%- assign next_from = stage_tomorrow.departureCity.label | default: stage_tomorrow.from | default: "Next start" -%}
-{%- assign next_to = stage_tomorrow.arrivalCity.label | default: stage_tomorrow.to | default: "Next finish" -%}
-
-{%- assign route_len = from.size | plus: to.size -%}
-{%- assign next_route_len = next_from.size | plus: next_to.size -%}
-
-{%- assign elevation_gain = stage_today.elevationGain | default: stage_today.elevation_gain | default: stage_today.positiveElevation -%}
-
-{%- case stage_today.type -%}
-  {%- when 'EQU' -%}{%- assign type_label = 'TEAM TIME TRIAL' -%}
-  {%- when 'PAS' -%}{%- assign type_label = 'TIME TRIAL' -%}
-  {%- when 'PLN' -%}{%- assign type_label = 'FLAT' -%}
-  {%- when 'MMG' -%}{%- assign type_label = 'MED. MOUNTAIN' -%}
-  {%- when 'HMG' -%}{%- assign type_label = 'MOUNTAIN' -%}
-  {%- when 'VAA' -%}{%- assign type_label = 'HILLY' -%}
-  {%- when 'PAA' -%}{%- assign type_label = 'HILLY' -%}
-  {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
-  {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
-{%- endcase -%}
-
-{%- case stage_tomorrow.type -%}
-  {%- when 'EQU' -%}{%- assign next_type_label = 'TEAM TIME TRIAL' -%}
-  {%- when 'PAS' -%}{%- assign next_type_label = 'TIME TRIAL' -%}
-  {%- when 'PLN' -%}{%- assign next_type_label = 'FLAT' -%}
-  {%- when 'MMG' -%}{%- assign next_type_label = 'MED. MOUNTAIN' -%}
-  {%- when 'HMG' -%}{%- assign next_type_label = 'MOUNTAIN' -%}
-  {%- when 'VAA' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- when 'PAA' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- when 'VAL' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- else -%}{%- assign next_type_label = stage_tomorrow.type | default: 'STAGE' -%}
-{%- endcase -%}
-
-{%- assign route_class = 'text--xlarge' -%}
-{%- if route_len > 34 -%}
-  {%- assign route_class = 'text--small' -%}
-{%- elsif route_len > 24 -%}
-  {%- assign route_class = 'text--base' -%}
-{%- elsif route_len > 16 -%}
-  {%- assign route_class = 'text--large' -%}
-{%- endif -%}
-
-{%- assign next_route_class = 'text--base' -%}
-{%- if next_route_len > 30 -%}
-  {%- assign next_route_class = 'text--small' -%}
-{%- endif -%}
-
-<style>
-  .vta-portrait,
-  .vta-portrait * { box-sizing: border-box; }
-
-  .vta-portrait {
-    --red: #e2001a;
-    --paper: #f4f1e8;
-    --ink: #111;
-    --muted: #707070;
-    background: var(--paper);
-    color: var(--ink);
-    overflow: hidden;
-    font-family: Inter, Arial, Helvetica, sans-serif;
-  }
-
-  .vta-card {
-    width: 100%;
-    height: 100%;
-    border: 3px solid var(--ink);
-    background: #fbfaf5;
-    overflow: hidden;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-  }
-
-  .vta-header {
-    background: var(--ink);
-    color: #fff;
-    display: grid;
-    grid-template-columns: 90px minmax(0, 1fr);
-    min-width: 0;
-  }
-
-  .vta-logo-wrap { border-right: 2px solid #fff; }
-
-  .vta-logo { width: 68px; height: 32px; }
-
-  .vta-gc { min-width: 0; display: grid; align-items: stretch; }
-  .vta-gc.has-gc,
-  .vta-gc.pre-race { grid-template-columns: 1fr; }
-
-  .vta-gc-item {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: 8px;
-    align-items: center;
-    color: #fff;
-  }
-
-  .gc-pos { color: #fff; line-height: 1; font-weight: 1000; }
-
-  .gc-name {
-    min-width: 0;
-    line-height: 1;
-    font-weight: 1000;
-    letter-spacing: -.3px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .gc-sub {
-    color: #cfcfcf;
-    line-height: 1;
-    font-weight: 800;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .gc-time {
-    color: #fff;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    line-height: 1;
-    font-weight: 1000;
-    white-space: nowrap;
-  }
-
-  .vta-hero {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border-bottom: 3px solid var(--ink);
-    background: #ddd;
-  }
-
-  .vta-hero img {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  .vta-hero::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgba(17, 17, 17, .18) .65px, transparent .65px);
-    background-size: 5px 5px;
-    pointer-events: none;
-  }
-
-  .vta-hero-title {
-    position: absolute;
-    left: 16px;
-    bottom: 14px;
-    z-index: 2;
-    color: #fff;
-    line-height: .86;
-    font-weight: 1000;
-    font-style: italic;
-    letter-spacing: -1px;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0 #111;
-    max-width: 90%;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
-  .vta-stage-block {
-    min-width: 0;
-    border-bottom: 3px solid var(--ink);
-    background: #fbfaf5;
-    display: grid;
-    align-content: center;
-  }
-
-  .vta-date-line {
-    display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr);
-    align-items: center;
-    gap: 7px;
-  }
-
-  .vta-badge {
-    background: var(--ink);
-    color: #fff;
-    line-height: 1;
-    font-weight: 1000;
-    letter-spacing: .5px;
-    white-space: nowrap;
-  }
-
-  .vta-date {
-    border-bottom: 2px solid var(--ink);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    line-height: 1;
-    font-weight: 1000;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .vta-stage-title {
-    line-height: .84;
-    font-weight: 1000;
-    letter-spacing: -.4px;
-    white-space: nowrap;
-  }
-
-  .vta-route {
-    min-width: 0;
-    line-height: 1.02;
-    font-weight: 1000;
-    letter-spacing: -.6px;
-    text-transform: uppercase;
-    overflow: hidden;
-  }
-
-  .vta-route .arrow,
-  .next-route .arrow { color: var(--red); }
-
-  .vta-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    background: #fbfaf5;
-    border-bottom: 3px solid var(--ink);
-  }
-
-  .vta-stat {
-    min-width: 0;
-    overflow: hidden;
-    border-right: 2px solid var(--ink);
-  }
-
-  .vta-stat:last-child { border-right: 0; }
-
-  .vta-stat-label {
-    color: var(--muted);
-    line-height: 1;
-    font-weight: 1000;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .vta-stat-value {
-    line-height: .9;
-    font-weight: 1000;
-    letter-spacing: -.5px;
-    white-space: nowrap;
-  }
-
-  .vta-stat-unit {
-    color: var(--muted);
-    line-height: 1;
-    font-weight: 1000;
-  }
-
-  .vta-bottom {
-    display: grid;
-    grid-template-columns: 76px minmax(0, 1fr);
-    background: #fbfaf5;
-  }
-
-  .next-number {
-    background: var(--red);
-    color: #fff;
-    border-right: 3px solid var(--ink);
-    font-weight: 1000;
-  }
-
-  .next-number .small { line-height: 1; letter-spacing: .5px; }
-  .next-number .num { line-height: .88; }
-
-  .next-main {
-    min-width: 0;
-    display: grid;
-    grid-template-rows: auto auto;
-    align-content: center;
-    overflow: hidden;
-    gap: 7px;
-  }
-
-  .next-date {
-    display: inline-block;
-    background: var(--ink);
-    color: #fff;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    line-height: 1;
-    font-weight: 1000;
-  }
-
-  .next-route {
-    line-height: 1;
-    font-weight: 1000;
-    letter-spacing: -.4px;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .next-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 7px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-weight: 1000;
-  }
-
-  .next-type { background: var(--ink); color: #fff; }
-</style>
-
-<div class="layout vta-portrait p--2">
-  <div class="vta-card rounded--large">
-    <div class="vta-header">
-      <div class="vta-logo-wrap flex flex--row flex--center-x flex--center-y px--2 py--2">
-        <img class="vta-logo image image--contain" src="{{ vueltaLogo | default: 'https://www.lavuelta.es/img/global/logo-reversed@2x.png' }}" alt="La Vuelta a España">
-      </div>
-
-      <div class="vta-gc {% if gc and gc.size >= 3 %}has-gc{% else %}pre-race{% endif %}">
-        {% if gc and gc.size >= 3 %}
-          <div class="vta-gc-item px--2 py--1">
-            <div class="gc-pos text--large">1</div>
-            <div>
-              <div class="gc-name text--base">{{ gc[0].name | upcase }}</div>
-              <div class="gc-sub text--small mt--xsmall">{% if gc[0].team %}{{ gc[0].team | upcase }}{% else %}TOTAL TIME{% endif %}</div>
-            </div>
-            <div class="gc-time text--base">{{ gc[0].time }}</div>
-          </div>
-        {% else %}
-          <div class="vta-gc-item px--2 py--1">
-            <div class="gc-pos text--large">▶</div>
-            <div>
-              <div class="gc-name text--base">{{ preRaceHeader.title | default: "VUELTA STARTS" }}</div>
-              <div class="gc-sub text--small mt--xsmall">GRAN SALIDA · {{ preRaceHeader.location | default: "SPAIN" }}</div>
-            </div>
-            <div class="gc-time text--base">{{ preRaceHeader.date | default: "AUGUST" }}</div>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="vta-hero">
-      {% if hero_image %}
-        <img class="image image--cover image-dither" src="{{ hero_image }}" alt="{{ from }}">
-      {% endif %}
-      <div class="vta-hero-title text--xxlarge">{{ from | upcase }}</div>
-    </div>
-
-    <div class="vta-stage-block px--3 py--2">
-      <div class="vta-date-line mb--small">
-        <div class="vta-badge rounded--xsmall px--2 py--1 text--small">{{ stage_today.date | date: "%a" | upcase }}</div>
-        <div class="vta-date pb--xsmall text--small">{{ stage_today.date | date: "%d %B %Y" | upcase }}</div>
-      </div>
-
-      <div class="vta-stage-title text--xxxlarge mb--small">STAGE {{ stage_today.stage }}</div>
-      <div class="vta-route {{ route_class }}">
-        {{ from | upcase }} <span class="arrow px--5">›</span> {{ to | upcase }}
-      </div>
-    </div>
-
-    <div class="vta-stats">
-      <div class="vta-stat px--2 py--2">
-        <div class="vta-stat-label text--small">DISTANCE</div>
-        <div class="vta-stat-value text--large">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }}</div>
-        <div class="vta-stat-unit text--small">{{ stage_today.distanceUnitLabel | default: "KM" }}</div>
-      </div>
-
-      <div class="vta-stat px--2 py--2">
-        <div class="vta-stat-label text--small">{% if elevation_gain %}ELEVATION{% else %}TYPE{% endif %}</div>
-        <div class="vta-stat-value text--base">{% if elevation_gain %}{{ elevation_gain }}{% else %}{{ type_label }}{% endif %}</div>
-        <div class="vta-stat-unit text--small">{% if elevation_gain %}M{% else %}&nbsp;{% endif %}</div>
-      </div>
-
-      <div class="vta-stat px--2 py--2">
-        <div class="vta-stat-label text--small">START</div>
-        <div class="vta-stat-value text--large">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }}</div>
-        <div class="vta-stat-unit text--small">{{ stage_today.startTimeZoneLabel | default: "CEST" }}</div>
-      </div>
-    </div>
-
-    {% if stage_tomorrow %}
-      <div class="vta-bottom">
-        <div class="next-number flex flex--col flex--center-x flex--center-y">
-          <div class="small text--small">NEXT</div>
-          <div class="num text--xlarge">{{ stage_tomorrow.stage }}</div>
-        </div>
-
-        <div class="next-main px--2 py--2">
-          <div>
-            <div class="next-date rounded--xsmall px--2 py--1 mb--xsmall text--small">{{ stage_tomorrow.date | date: "%a %d %B %Y" | upcase }}</div>
-            <div class="next-route {{ next_route_class }}">
-              {{ next_from | upcase }} <span class="arrow px--4">›</span> {{ next_to | upcase }}
-            </div>
-          </div>
-          <div class="next-meta text--small">
-            <span>{{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }}</span>
-            <span>|</span>
-            <span class="next-type rounded--xsmall px--2 py--1">{{ next_type_label }}</span>
-            <span>|</span>
-            <span>{{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
-          </div>
-        </div>
-      </div>
-    {% endif %}
+  <!-- HERO: today's stage identity, centered -->
+  <div class="flex flex--col flex--center-x gap--xsmall text--center">
+    <span class="value value--large value--tnums" data-fit-value="true">{{ stage_today.stage }}</span>
+    <span class="title title--base" data-clamp="1">{{ from | upcase }} › {{ to | upcase }}</span>
+    <span class="label label--small label--gray">{{ type_label }} · {{ stage_today.date | date: "%a %d %b" | upcase }}</span>
   </div>
+
+  <div class="divider"></div>
+
+  <!-- STATS: all three fit at 400px width -->
+  <div class="grid grid--cols-3">
+    <div class="item">
+      <div class="meta"></div>
+      <div class="content">
+        <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.distanceValue | default: stage_today.lengthDisplay | default: stage_today.length | default: stage_today.distance }} {{ stage_today.distanceUnitLabel | default: "KM" }}</span>
+        <span class="label label--small">DISTANCE</span>
+      </div>
+    </div>
+    <div class="item">
+      <div class="meta"></div>
+      <div class="content">
+        <span class="value value--small value--tnums" data-fit-value="true">{{ stage_today.startTimeDisplay | default: stage_today.startTime | slice: 0, 5 }} {{ stage_today.startTimeZoneLabel | default: "CEST" }}</span>
+        <span class="label label--small">START</span>
+      </div>
+    </div>
+    <div class="item">
+      <div class="meta"></div>
+      <div class="content">
+        <span class="value value--small value--tnums" data-fit-value="true">{% if elevationProfile.totalAscent %}{{ elevationProfile.totalAscent }}M{% else %}—{% endif %}</span>
+        <span class="label label--small">ASCENT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART: compact elevation profile with schematic route below it -->
+  {% if routeDiagram or elevationProfile %}
+    <div class="flex flex--col gap--none w--full">
+      {% if elevationProfile %}
+        {%- assign axis_y = elevationProfile.height -%}
+        {%- assign tick_y2 = axis_y | plus: 4 -%}
+        {%- assign tick_label_y = axis_y | plus: 13 -%}
+        <svg viewBox="0 0 {{ elevationProfile.width }} {{ elevationProfile.totalHeight | default: elevationProfile.height }}" preserveAspectRatio="none" class="vta-elevation-svg-hv w--full h--[66px]">
+          <style>
+            .vta-elevation-svg-hv text { font-size: 8px; font-weight: 700; letter-spacing: 0; }
+            .vta-elevation-svg-hv .axis-label { fill: #707070; }
+            .vta-elevation-svg-hv .leader { stroke: #000; stroke-width: 1; stroke-dasharray: 2 2; }
+          </style>
+          <polygon points="0,{{ elevationProfile.height }} {{ elevationProfile.points }} {{ elevationProfile.width }},{{ elevationProfile.height }}" fill="#000"></polygon>
+          <line x1="0" y1="{{ axis_y }}" x2="{{ elevationProfile.width }}" y2="{{ axis_y }}" stroke="#000" stroke-width="1.5"></line>
+          {% for t in elevationProfile.ticks %}
+            <line x1="{{ t.x }}" y1="{{ axis_y }}" x2="{{ t.x }}" y2="{{ tick_y2 }}" stroke="#000" stroke-width="1"></line>
+            <text x="{{ t.x }}" y="{{ tick_label_y }}" text-anchor="{{ t.anchor | default: 'middle' }}" class="axis-label">{{ t.label }}</text>
+          {% endfor %}
+          {% for m in elevationProfile.markers %}
+            {% unless m.type == 'start' or m.type == 'finish' %}
+              <line class="leader" x1="{{ m.x }}" y1="{{ m.y | minus: 2 }}" x2="{{ m.x }}" y2="{{ axis_y }}"></line>
+            {% endunless %}
+            {% case m.type %}
+              {% when 'summit' %}
+                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 8 }}" r="6" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+                <text x="{{ m.x }}" y="{{ m.y | minus: 5 }}" text-anchor="middle" fill="#fff">{{ m.category }}</text>
+              {% when 'sprint' %}
+                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 8 }}" r="5" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+                <text x="{{ m.x }}" y="{{ m.y | minus: 5 }}" text-anchor="middle" fill="#fff">S</text>
+              {% when 'start' %}
+                <path d="M {{ m.x }},{{ axis_y | minus: 9 }} L {{ m.x }},{{ axis_y }} L {{ m.x | plus: 8 }},{{ axis_y | minus: 4 }} Z" fill="#000"></path>
+              {% when 'finish' %}
+                <rect x="{{ m.x | minus: 7 }}" y="{{ axis_y | minus: 9 }}" width="7" height="9" fill="#000"></rect>
+                <rect x="{{ m.x | minus: 7 }}" y="{{ axis_y | minus: 9 }}" width="3.5" height="4.5" fill="#fff"></rect>
+                <rect x="{{ m.x | minus: 3.5 }}" y="{{ axis_y | minus: 4.5 }}" width="3.5" height="4.5" fill="#fff"></rect>
+            {% endcase %}
+          {% endfor %}
+        </svg>
+      {% endif %}
+
+      {% if routeDiagram %}
+        {%- assign rd_top_y = routeDiagram.baselineY | minus: 10 -%}
+        {%- assign rd_bottom_y = routeDiagram.baselineY | plus: 13 -%}
+        <svg viewBox="0 0 {{ routeDiagram.width }} {{ routeDiagram.height }}" preserveAspectRatio="none" class="vta-route-svg-hv w--full h--[20px]">
+          <style>
+            .vta-route-svg-hv text { font-size: 8px; font-weight: 700; letter-spacing: 0; }
+            .vta-route-svg-hv .waypoint-label { fill: #000; }
+          </style>
+          <line x1="0" y1="{{ routeDiagram.baselineY }}" x2="{{ routeDiagram.width }}" y2="{{ routeDiagram.baselineY }}" stroke="#000" stroke-width="1.5"></line>
+          {% for p in routeDiagram.points %}
+            {% case p.type %}
+              {% when 'start' %}
+                <path d="M {{ p.x }},{{ routeDiagram.baselineY | minus: 7 }} L {{ p.x }},{{ routeDiagram.baselineY | plus: 7 }} L {{ p.x | plus: 8 }},{{ routeDiagram.baselineY }} Z" fill="#000"></path>
+              {% when 'climb' %}
+                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="6" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">{{ p.category }}</text>
+              {% when 'sprint' %}
+                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="5" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">S</text>
+              {% when 'finish' %}
+                <rect x="{{ p.x | minus: 7 }}" y="{{ routeDiagram.baselineY | minus: 7 }}" width="7" height="14" fill="#000"></rect>
+                <rect x="{{ p.x | minus: 7 }}" y="{{ routeDiagram.baselineY | minus: 7 }}" width="3.5" height="7" fill="#fff"></rect>
+                <rect x="{{ p.x | minus: 3.5 }}" y="{{ routeDiagram.baselineY }}" width="3.5" height="7" fill="#fff"></rect>
+            {% endcase %}
+            {% if p.name %}
+              <text x="{{ p.x }}" y="{% if p.align == 'top' %}{{ rd_top_y }}{% else %}{{ rd_bottom_y }}{% endif %}" text-anchor="{{ p.anchor }}" class="waypoint-label">{{ p.name }}</text>
+            {% endif %}
+          {% endfor %}
+        </svg>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="flex flex--row flex--center h--[66px] w--full">
+      <span class="label label--gray">Elevation profile available once the route is published</span>
+    </div>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <!-- NEXT STAGE preview -->
+  {% if stage_tomorrow %}
+    <div class="flex flex--col gap--small w--full">
+      <span class="label label--filled no-shrink" data-clamp="1">NEXT · STAGE {{ stage_tomorrow.stage }}</span>
+      <span class="label label--gray" data-clamp="1">{{ next_from | upcase }} › {{ next_to | upcase }} · {{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }} · {{ next_type_label }}</span>
+    </div>
+  {% endif %}
+
+</div>
+
+<div class="title_bar">
+  <img class="image" src="data:image/svg+xml;base64,{{ title_bar_icon }}">
+  <span class="title">Vuelta a España</span>
+  <span class="instance">Stage {{ stage_today.stage }} of 21</span>
 </div>

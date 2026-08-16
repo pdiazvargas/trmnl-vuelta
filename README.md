@@ -1,12 +1,12 @@
 # trmnl-vuelta
 
-A [TRMNL](https://usetrmnl.com) private plugin that shows today's La Vuelta a España stage: route, distance, stage type, start time, and a preview of tomorrow's stage. Once the general classification is live, the top 3 overall standings show in the header.
+A [TRMNL](https://usetrmnl.com) private plugin that shows today's La Vuelta a España stage: route, distance, stage type, start time, elevation profile, and a preview of tomorrow's stage. Once the general classification is live, the race leader shows as a small pill in the top-right corner (pre-race, it shows a countdown to the Gran Salida instead).
 
 Forked from the "Tour de France Stages" plugin, pointed at La Vuelta instead of the Tour — La Vuelta runs on the same ASO Race Center platform, so the same fetch/shape logic applies almost unchanged.
 
 ![Full layout preview](docs/preview-full.png)
 
-*Live preview via `trmnlp serve`, showing Stage 4 (Andorra la Vella mountain loop, 2026 route) pulled from `racecenter.lavuelta.es`.*
+*Live preview via `trmnlp serve`, showing Stage 15 (Palma del Río → Córdoba, 2026 route) pulled from `racecenter.lavuelta.es`.*
 
 ## How it works
 
@@ -16,10 +16,13 @@ No separate backend or hosting is required — everything runs inside the TRMNL 
 
 ## Layouts
 
-- `full.liquid` — full-screen: GC/pre-race header, hero city photo, stage stats
-- `half_horizontal.liquid` — wide half-screen
-- `half_vertical.liquid` — tall half-screen, with hero photo
-- `quadrant.liquid` — compact quarter-screen, text only
+Minimalist, framework-native design (TRMNL design system v3.2.0) — no photos, sparing red accent reserved for climb/KOM and sprint markers in the elevation chart.
+
+- `shared.liquid` — common Liquid logic (stage resolution, stage-type labels, GC/pre-race pill, title bar icon) shared by all four views
+- `full.liquid` — full-screen: race-leader/countdown pill, stage hero + stats, elevation profile with schematic route diagram, next-stage preview
+- `half_horizontal.liquid` — wide half-screen, single-row strip with a compact elevation chart
+- `half_vertical.liquid` — tall half-screen, stacked with a compact elevation + route chart
+- `quadrant.liquid` — compact quarter-screen, stage identity only (no chart)
 
 ## Local preview
 
