@@ -1,14 +1,5 @@
 <div class="layout layout--col gap--small">
 
-  <!-- STATUS PILL: race leader, or pre-race countdown before GC exists -->
-  <div class="flex flex--row flex--right w--full">
-    {% if has_gc %}
-      <span class="label label--small label--filled rounded--full px--2 py--1" data-clamp="1">{{ gc_leader.name | upcase }} · {{ gc_leader.time }}</span>
-    {% else %}
-      <span class="label label--small label--filled rounded--full px--2 py--1" data-clamp="1">{{ preRaceHeader.title | default: "GRAN SALIDA" | upcase }} · {{ preRaceHeader.daysToGo | default: "-" }} DAYS</span>
-    {% endif %}
-  </div>
-
   <!-- HERO: today's stage identity, centered -->
   <div class="flex flex--col flex--center-x gap--xsmall text--center">
     <span class="value value--large value--tnums" data-fit-value="true">{{ stage_today.stage }}</span>
