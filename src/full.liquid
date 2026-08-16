@@ -2,12 +2,12 @@
 
   <!-- HERO: today's stage identity + supporting stats -->
   <div class="grid grid--cols-12">
-    <div class="col--span-2 flex flex--col flex--center-y gap--xsmall">
+    <div class="col--span-2 flex flex--col flex--top gap--xsmall">
       <span class="value value--xlarge value--tnums" data-fit-value="true">{{ stage_today.stage }}</span>
       <span class="label">STAGE</span>
     </div>
 
-    <div class="col--span-6 flex flex--col flex--center-y gap--xsmall">
+    <div class="col--span-6 flex flex--col flex--top gap--small">
       <span class="title title--base" data-clamp="1">{{ from | upcase }}</span>
       <span class="title title--base" data-clamp="1">› {{ to | upcase }}</span>
       <span class="label label--gray">{{ type_label }} · {{ stage_today.date | date: "%a %d %b" | upcase }}</span>
