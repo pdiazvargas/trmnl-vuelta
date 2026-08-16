@@ -60,82 +60,47 @@
 
   <div class="divider"></div>
 
-  <!-- CHART: elevation profile with schematic route (start/climbs/sprints/finish) below it -->
-  {% if routeDiagram or elevationProfile %}
-    <div class="flex flex--col gap--none w--full">
-      {% if elevationProfile %}
-        {%- assign axis_y = elevationProfile.height -%}
-        {%- assign tick_y2 = axis_y | plus: 4 -%}
-        {%- assign tick_label_y = axis_y | plus: 13 -%}
-        <svg viewBox="0 0 {{ elevationProfile.width }} {{ elevationProfile.totalHeight | default: elevationProfile.height }}" preserveAspectRatio="none" class="vta-elevation-svg w--full h--[92px]">
-          <style>
-            .vta-elevation-svg text { font-size: 8px; font-weight: 700; letter-spacing: 0; }
-            .vta-elevation-svg .axis-label { fill: #707070; }
-            .vta-elevation-svg .marker-alt { fill: #000; }
-            .vta-elevation-svg .leader { stroke: #000; stroke-width: 1; stroke-dasharray: 2 2; }
-          </style>
-          <polygon points="0,{{ elevationProfile.height }} {{ elevationProfile.points }} {{ elevationProfile.width }},{{ elevationProfile.height }}" fill="#000"></polygon>
-          <line x1="0" y1="{{ axis_y }}" x2="{{ elevationProfile.width }}" y2="{{ axis_y }}" stroke="#000" stroke-width="1.5"></line>
-          {% for t in elevationProfile.ticks %}
-            <line x1="{{ t.x }}" y1="{{ axis_y }}" x2="{{ t.x }}" y2="{{ tick_y2 }}" stroke="#000" stroke-width="1"></line>
-            <text x="{{ t.x }}" y="{{ tick_label_y }}" text-anchor="{{ t.anchor | default: 'middle' }}" class="axis-label">{{ t.label }}</text>
-          {% endfor %}
-          {% for m in elevationProfile.markers %}
-            {% unless m.type == 'start' or m.type == 'finish' %}
-              <line class="leader" x1="{{ m.x }}" y1="{{ m.y | minus: 2 }}" x2="{{ m.x }}" y2="{{ axis_y }}"></line>
-            {% endunless %}
-            {% case m.type %}
-              {% when 'summit' %}
-                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="7" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
-                <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" fill="#fff">{{ m.category }}</text>
-                <text x="{{ m.x }}" y="{{ m.y | minus: 18 }}" text-anchor="middle" class="marker-alt">{{ m.altitude }}m</text>
-              {% when 'sprint' %}
-                <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="6" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
-                <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" fill="#fff">S</text>
-              {% when 'start' %}
-                <path d="M {{ m.x }},{{ axis_y | minus: 10 }} L {{ m.x }},{{ axis_y }} L {{ m.x | plus: 9 }},{{ axis_y | minus: 5 }} Z" fill="#000"></path>
-              {% when 'finish' %}
-                <rect x="{{ m.x | minus: 8 }}" y="{{ axis_y | minus: 10 }}" width="8" height="10" fill="#000"></rect>
-                <rect x="{{ m.x | minus: 8 }}" y="{{ axis_y | minus: 10 }}" width="4" height="5" fill="#fff"></rect>
-                <rect x="{{ m.x | minus: 4 }}" y="{{ axis_y | minus: 5 }}" width="4" height="5" fill="#fff"></rect>
-            {% endcase %}
-          {% endfor %}
-        </svg>
-      {% endif %}
-
-      {% if routeDiagram %}
-        {%- assign rd_top_y = routeDiagram.baselineY | minus: 12 -%}
-        {%- assign rd_bottom_y = routeDiagram.baselineY | plus: 16 -%}
-        <svg viewBox="0 0 {{ routeDiagram.width }} {{ routeDiagram.height }}" preserveAspectRatio="none" class="vta-route-svg w--full h--[38px]">
-          <style>
-            .vta-route-svg text { font-size: 8px; font-weight: 700; letter-spacing: 0; }
-            .vta-route-svg .waypoint-label { fill: #000; }
-          </style>
-          <line x1="0" y1="{{ routeDiagram.baselineY }}" x2="{{ routeDiagram.width }}" y2="{{ routeDiagram.baselineY }}" stroke="#000" stroke-width="1.5"></line>
-          {% for p in routeDiagram.points %}
-            {% case p.type %}
-              {% when 'start' %}
-                <path d="M {{ p.x }},{{ routeDiagram.baselineY | minus: 8 }} L {{ p.x }},{{ routeDiagram.baselineY | plus: 8 }} L {{ p.x | plus: 9 }},{{ routeDiagram.baselineY }} Z" fill="#000"></path>
-              {% when 'climb' %}
-                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="7" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
-                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">{{ p.category }}</text>
-              {% when 'sprint' %}
-                <circle cx="{{ p.x }}" cy="{{ routeDiagram.baselineY }}" r="6" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
-                <text x="{{ p.x }}" y="{{ routeDiagram.baselineY | plus: 3 }}" text-anchor="middle" fill="#fff">S</text>
-              {% when 'finish' %}
-                <rect x="{{ p.x | minus: 8 }}" y="{{ routeDiagram.baselineY | minus: 8 }}" width="8" height="16" fill="#000"></rect>
-                <rect x="{{ p.x | minus: 8 }}" y="{{ routeDiagram.baselineY | minus: 8 }}" width="4" height="8" fill="#fff"></rect>
-                <rect x="{{ p.x | minus: 4 }}" y="{{ routeDiagram.baselineY }}" width="4" height="8" fill="#fff"></rect>
-            {% endcase %}
-            {% if p.name %}
-              <text x="{{ p.x }}" y="{% if p.align == 'top' %}{{ rd_top_y }}{% else %}{{ rd_bottom_y }}{% endif %}" text-anchor="{{ p.anchor }}" class="waypoint-label">{{ p.name }}</text>
-            {% endif %}
-          {% endfor %}
-        </svg>
-      {% endif %}
-    </div>
+  <!-- CHART: elevation profile -->
+  {% if elevationProfile %}
+    {%- assign axis_y = elevationProfile.height -%}
+    {%- assign tick_y2 = axis_y | plus: 4 -%}
+    {%- assign tick_label_y = axis_y | plus: 13 -%}
+    <svg viewBox="0 0 {{ elevationProfile.width }} {{ elevationProfile.totalHeight | default: elevationProfile.height }}" preserveAspectRatio="none" class="vta-elevation-svg w--full h--[128px]">
+      <style>
+        .vta-elevation-svg text { font-size: 8px; font-weight: 700; letter-spacing: 0; }
+        .vta-elevation-svg .axis-label { fill: #707070; }
+        .vta-elevation-svg .marker-alt { fill: #000; }
+        .vta-elevation-svg .leader { stroke: #000; stroke-width: 1; stroke-dasharray: 2 2; }
+      </style>
+      <polygon points="0,{{ elevationProfile.height }} {{ elevationProfile.points }} {{ elevationProfile.width }},{{ elevationProfile.height }}" fill="#000"></polygon>
+      <line x1="0" y1="{{ axis_y }}" x2="{{ elevationProfile.width }}" y2="{{ axis_y }}" stroke="#000" stroke-width="1.5"></line>
+      {% for t in elevationProfile.ticks %}
+        <line x1="{{ t.x }}" y1="{{ axis_y }}" x2="{{ t.x }}" y2="{{ tick_y2 }}" stroke="#000" stroke-width="1"></line>
+        <text x="{{ t.x }}" y="{{ tick_label_y }}" text-anchor="{{ t.anchor | default: 'middle' }}" class="axis-label">{{ t.label }}</text>
+      {% endfor %}
+      {% for m in elevationProfile.markers %}
+        {% unless m.type == 'start' or m.type == 'finish' %}
+          <line class="leader" x1="{{ m.x }}" y1="{{ m.y | minus: 2 }}" x2="{{ m.x }}" y2="{{ axis_y }}"></line>
+        {% endunless %}
+        {% case m.type %}
+          {% when 'summit' %}
+            <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="7" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+            <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" fill="#fff">{{ m.category }}</text>
+            <text x="{{ m.x }}" y="{{ m.y | minus: 18 }}" text-anchor="middle" class="marker-alt">{{ m.altitude }}m</text>
+          {% when 'sprint' %}
+            <circle cx="{{ m.x }}" cy="{{ m.y | minus: 9 }}" r="6" fill="#e2001a" stroke="#fff" stroke-width="1"></circle>
+            <text x="{{ m.x }}" y="{{ m.y | minus: 6 }}" text-anchor="middle" fill="#fff">S</text>
+          {% when 'start' %}
+            <path d="M {{ m.x }},{{ axis_y | minus: 10 }} L {{ m.x }},{{ axis_y }} L {{ m.x | plus: 9 }},{{ axis_y | minus: 5 }} Z" fill="#000"></path>
+          {% when 'finish' %}
+            <rect x="{{ m.x | minus: 8 }}" y="{{ axis_y | minus: 10 }}" width="8" height="10" fill="#000"></rect>
+            <rect x="{{ m.x | minus: 8 }}" y="{{ axis_y | minus: 10 }}" width="4" height="5" fill="#fff"></rect>
+            <rect x="{{ m.x | minus: 4 }}" y="{{ axis_y | minus: 5 }}" width="4" height="5" fill="#fff"></rect>
+        {% endcase %}
+      {% endfor %}
+    </svg>
   {% else %}
-    <div class="flex flex--row flex--center h--[92px] w--full">
+    <div class="flex flex--row flex--center h--[128px] w--full">
       <span class="label label--gray">Elevation profile available once the route is published</span>
     </div>
   {% endif %}
