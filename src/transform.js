@@ -230,6 +230,12 @@ async function run(input) {
       else t.anchor = "middle";
     });
 
+    let totalAscent = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const delta = rows[i].altitude - rows[i - 1].altitude;
+      if (delta > 0) totalAscent += delta;
+    }
+
     return {
       width: CHART_WIDTH,
       height: CHART_HEIGHT,
@@ -239,6 +245,7 @@ async function run(input) {
       ticks,
       minAltitude: Math.round(minAlt),
       maxAltitude: Math.round(maxAlt),
+      totalAscent: Math.round(totalAscent),
       totalKm
     };
   }
