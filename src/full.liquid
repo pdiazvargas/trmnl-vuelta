@@ -133,7 +133,7 @@
   <!-- NEXT STAGE preview -->
   {% if stage_tomorrow %}
     <div class="flex flex--row flex--center-y gap--small w--full">
-      <span class="label label--filled" data-clamp="1">NEXT · STAGE {{ stage_tomorrow.stage }}</span>
+      <span class="label label--filled no-shrink" data-clamp="1">NEXT · STAGE {{ stage_tomorrow.stage }}</span>
       <span class="label label--gray" data-clamp="1">{{ next_from | upcase }} › {{ next_to | upcase }} · {{ stage_tomorrow.distanceValue | default: stage_tomorrow.lengthDisplay | default: stage_tomorrow.length }} {{ stage_tomorrow.distanceUnitLabel | default: "KM" }} · {{ next_type_label }} · {{ stage_tomorrow.startTimeDisplay | default: stage_tomorrow.startTime | slice: 0, 5 }} {{ stage_tomorrow.startTimeZoneLabel | default: "CEST" }}</span>
     </div>
   {% endif %}
