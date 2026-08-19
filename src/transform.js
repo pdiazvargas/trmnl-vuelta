@@ -596,14 +596,27 @@ async function run(input) {
   const lastStage = stages[stages.length - 1];
   const currentDateKey = todayMadridKey();
 
+  // When the selected season isn't currently racing (its dates are in the
+  // past or the future), there's no "today's stage" to point to. Rather than
+  // freezing on stage 1 or the final stage, cycle through the stage list by
+  // day-of-month so the display still changes day to day — day 14 shows
+  // stage 14, day 22 wraps back to stage 1, etc.
+  function stageForDayOfMonth() {
+    const dayOfMonth = Number(currentDateKey.slice(8, 10));
+    const stageNumber = ((dayOfMonth - 1) % stages.length) + 1;
+    return (
+      stages.find((stage) => Number(stage.stage) === stageNumber) || firstStage
+    );
+  }
+
   let today;
   let mode;
 
   if (currentDateKey < dateKey(firstStage.date)) {
-    today = firstStage;
+    today = stageForDayOfMonth();
     mode = "before_tour";
   } else if (currentDateKey > dateKey(lastStage.date)) {
-    today = lastStage;
+    today = stageForDayOfMonth();
     mode = "after_tour";
   } else {
     today =
