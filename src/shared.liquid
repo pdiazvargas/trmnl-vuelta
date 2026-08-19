@@ -22,29 +22,15 @@
 {%- assign next_from = stage_tomorrow.departureCity.label | default: stage_tomorrow.from | default: "Next start" -%}
 {%- assign next_to = stage_tomorrow.arrivalCity.label | default: stage_tomorrow.to | default: "Next finish" -%}
 
-{%- case stage_today.type -%}
-  {%- when 'EQU' -%}{%- assign type_label = 'TEAM TIME TRIAL' -%}
-  {%- when 'PAS' -%}{%- assign type_label = 'TIME TRIAL' -%}
-  {%- when 'PLN' -%}{%- assign type_label = 'FLAT' -%}
-  {%- when 'MMG' -%}{%- assign type_label = 'MED. MOUNTAIN' -%}
-  {%- when 'HMG' -%}{%- assign type_label = 'MOUNTAIN' -%}
-  {%- when 'VAA' -%}{%- assign type_label = 'HILLY' -%}
-  {%- when 'PAA' -%}{%- assign type_label = 'HILLY' -%}
-  {%- when 'VAL' -%}{%- assign type_label = 'HILLY' -%}
-  {%- else -%}{%- assign type_label = stage_today.type | default: 'STAGE' -%}
-{%- endcase -%}
+{%- comment -%}
+  Stage-type labels (EQU/PAS/PLN/etc. -> "TEAM TIME TRIAL"/"FLAT"/...) are
+  computed once in transform.js's decorateStage and land on every stage as
+  `typeLabel` — read directly instead of re-deriving the mapping here.
+{%- endcomment -%}
+{%- assign type_label = stage_today.typeLabel | default: 'STAGE' -%}
+{%- assign next_type_label = stage_tomorrow.typeLabel | default: 'STAGE' -%}
 
-{%- case stage_tomorrow.type -%}
-  {%- when 'EQU' -%}{%- assign next_type_label = 'TEAM TIME TRIAL' -%}
-  {%- when 'PAS' -%}{%- assign next_type_label = 'TIME TRIAL' -%}
-  {%- when 'PLN' -%}{%- assign next_type_label = 'FLAT' -%}
-  {%- when 'MMG' -%}{%- assign next_type_label = 'MED. MOUNTAIN' -%}
-  {%- when 'HMG' -%}{%- assign next_type_label = 'MOUNTAIN' -%}
-  {%- when 'VAA' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- when 'PAA' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- when 'VAL' -%}{%- assign next_type_label = 'HILLY' -%}
-  {%- else -%}{%- assign next_type_label = stage_tomorrow.type | default: 'STAGE' -%}
-{%- endcase -%}
+{%- assign total_stages = totalStages | default: data.totalStages -%}
 
 {%- assign has_gc = false -%}
 {%- if gc and gc.size > 0 -%}
